@@ -20,7 +20,8 @@ BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 res='0.5'; %Only needed if you have multiple resolutions in your patient folder 
-% AND the resolution is named in the file folder as "0.5" or 05
+% AND the resolution is named in the file folder as "0.5" or 05. Put in
+% with a dot here.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
