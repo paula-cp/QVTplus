@@ -19,17 +19,17 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
-res='0.5'; %Only needed if you have multiple resolutions in your patient folder 
+res='';%'0.5'; %Only needed if you have multiple resolutions in your patient folder 
 % AND the resolution is named in the file folder as "0.5" or 05. Put in
 % with a dot here.
-
+Vendor='GE'; %Can also put GE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Or do
 addpath(pwd)
 set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
 cd(directory)
-[Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,res);
+[Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
 
 %Load each velocity and put into phase matrix
 [VAP,~] = shuffleDCM(APpath,directory,0);
@@ -63,7 +63,11 @@ filetype = 'dcm';
 nframes = dcminfo.CardiacNumberOfImages; %number of reconstructed frames
 timeres = dcminfo.NominalInterval/nframes; %temporal resolution (ms)
 res = dcminfo.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC)
-slicespace=dcminfo.SpacingBetweenSlices;
+if strcmp('GE',Vendor)
+    slicespace=dcminfo.SpacingBetweenSlices;
+elseif strcmp('Siemens',Vendor)
+    slicespace=dcminfo.SliceThickness;
+end
 matrix(1) = dcminfo.Rows; %number of pixels in rows
 matrix(2) = dcminfo.Columns;
 matrix(3) = length(MAG(1,1,:)); %number of slices

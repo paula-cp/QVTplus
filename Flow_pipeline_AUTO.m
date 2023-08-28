@@ -1,10 +1,12 @@
 clear;clc;
 %% Initialization
 path2bids='Z:\Sergio\HITH_Control';
-subject='sub-001';
+subject='sub-010';
 path2labels=fullfile(path2bids,'derivatives\QVT',subject); % just to the root folder, can only need this if not using bids
-percentileCutoff=0.2;
-plotflag=1; %0 = no plot, 1 = make plot
+%path2labels='C:\Users\sdem348\Desktop\DTDS'; % just to the root folder, can only need this if not using bids
+
+percentileCutoff=0.30;
+plotflag=0; %0 = no plot, 1 = make plot
 plotraw=1; %0 = no plot, 1 = make plot with raw curves plotted
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% Don't change below %%%%%%%%
@@ -40,35 +42,71 @@ for i=1:9
     end
     Idxs=a(1:cutoff,1); %get row indices (of raw total branch list)
     HQflows{i,1}=Flow(Idxs,:); %store raw HQ flow data, mean, std, and mean flows 
-    HQflows{i,2}=mean(Flow(Idxs,:));
-    HQflows{i,3}=std(Flow(Idxs,:));
-    HQflows{i,4}=mean(Flow(Idxs,:)');
+    HQflows{i,2}=mean(Flow(Idxs,:)); %mean trace
+    HQflows{i,3}=std(Flow(Idxs,:)); %std trace
+    HQflows{i,4}=mean(Flow(Idxs,:)'); %mean flow of each trace
+    NormFlow=Flow(Idxs,:);
+    for m=1:length(Idxs)
+        NormFlow(m,:)=NormFlow(m,:)./mean(NormFlow(m,:));
+    end
+    HQflows{i,5}=mean(NormFlow);
+    HQflows{i,6}=std(NormFlow);
+    HQflows{i,7}=NormFlow;
 end
 %% Compute BBF's and Deviation Estimates
-TotalInletFlow=mean(HQflows{1,2})+mean(HQflows{2,2})+mean(HQflows{9,2});
-TotalInletFlowMin=min(HQflows{1,2})+min(HQflows{2,2})+min(HQflows{9,2});
-TotalInletFlowMax=max(HQflows{1,2})+max(HQflows{2,2})+max(HQflows{9,2});
-TotalInletFlowStd=sqrt(std(HQflows{1,4}).^2+std(HQflows{2,4}).^2+std(HQflows{9,4}).^2);
-divisionDevIn=(TotalInletFlowStd./TotalInletFlow).^2;
+TotalInletFlow = mean(HQflows{1,2})+mean(HQflows{2,2})+mean(HQflows{9,2});
+TotalInletFlowMin = min(HQflows{1,4})+min(HQflows{2,4})+min(HQflows{9,4});
+TotalInletFlowMax = max(HQflows{1,4})+max(HQflows{2,4})+max(HQflows{9,4});
+TotalInletFlowStd = sqrt(std(HQflows{1,4}).^2+std(HQflows{2,4}).^2+std(HQflows{9,4}).^2);
+divisionDevIn = (TotalInletFlowStd./TotalInletFlow).^2;
 %fprintf('Total Inlet Flow = %3.1f +- %3.1f mL/s\n',TotalInletFlow,TotalInletFlowStd)
 for i=3:8
-    TotalOutletFlow=mean(HQflows{i,2});
-    TotalOutletFlowMin=min(HQflows{i,2});
-    TotalOutletFlowMax=max(HQflows{i,2});
-    TotalOutletFlowStd=std(HQflows{i,4});
-    divisionDevOut=(TotalOutletFlowStd./TotalOutletFlow).^2;
-    BFF(i-2,1)=TotalOutletFlow/TotalInletFlow; %mean BFF
-    BFF(i-2,2)=BFF(i-2,1).*sqrt(divisionDevIn+divisionDevOut); %std BFF
-    BFF(i-2,3)=TotalOutletFlowMax/TotalInletFlow; %max BFF
-    BFF(i-2,4)=TotalOutletFlowMin/TotalInletFlow; %min BFF
+    TotalOutletFlow = mean(HQflows{i,2});
+    TotalOutletFlowMin = min(HQflows{i,4});
+    TotalOutletFlowMax = max(HQflows{i,4});
+    TotalOutletFlowStd = std(HQflows{i,4});
+    divisionDevOut = (TotalOutletFlowStd./TotalOutletFlow).^2;
+    BFF(i-2,1) = TotalOutletFlow/TotalInletFlow; %mean BFF
+    BFF(i-2,2) = BFF(i-2,1).*sqrt(divisionDevIn+divisionDevOut); %std BFF
+    BFF(i-2,3) = TotalOutletFlowMax/TotalInletFlow; %max BFF
+    BFF(i-2,4) = TotalOutletFlowMin/TotalInletFlow; %min BFF
     %fprintf(strcat(TitleNames{i},' flow = %3.1f +- %3.1f mL/s\n'),TotalOutletFlow,TotalOutletFlowStd)
+    if i==3 % MCA_L
+        totalOutletFlow = mean(HQflows{3,2})+ mean(HQflows{5,2}) + mean(HQflows{6,2}); %LMCA LACA RACA
+        localBFFMCA_L = mean(HQflows{3,2})./totalOutletFlow; %L_MCA
+        localBFFACA_L = mean(HQflows{5,2})./totalOutletFlow; %L_ACA
+        localBFFACA_R = mean(HQflows{6,2})./totalOutletFlow; %L_ACA
+        offset = mean(HQflows{1,2})-totalOutletFlow; %LICA - Outlet
+        correction(1,1)=localBFFMCA_L*offset;
+        ACAL(1,1)=localBFFACA_L*offset;
+        ACAR(1,1)=localBFFACA_R*offset;
+    elseif i==4 % $ MCA_R
+        totalOutletFlow = mean(HQflows{4,2})+ mean(HQflows{5,2}) + mean(HQflows{6,2}); %LMCA LACA RACA
+        localBFFMCA_L = mean(HQflows{4,2})./totalOutletFlow; %L_MCA
+        localBFFACA_L = mean(HQflows{5,2})./totalOutletFlow; %L_ACA
+        localBFFACA_R = mean(HQflows{6,2})./totalOutletFlow; %L_ACA
+        offset = mean(HQflows{2,2})-totalOutletFlow; %RICA - Outlet
+        correction(2,1)=localBFFMCA_L*offset;
+        ACAL(1,2)=localBFFACA_L*offset;
+        ACAR(1,2)=localBFFACA_R*offset;
+    elseif i==7 % $ PCAs
+        % totalOutletFlow = mean(HQflows{7,2})+ mean(HQflows{8,2}); %PCAs
+        % localBFFPCA_L = mean(HQflows{7,2})./totalOutletFlow;
+        % localBFFPCA_R = mean(HQflows{8,2})./totalOutletFlow;
+        % offset = mean(HQflows{9,2})-totalOutletFlow; %basilar - Outlet
+        correction(5,1)=0;%localBFFPCA_L*offset;
+        correction(6,1)=0;%localBFFPCA_R*offset;
+    end
+    correction(3,1)=mean(ACAL);
+    correction(4,1)=mean(ACAR);
 end
+%%
 T = max(time); %period of average heartbeat length from 4Dflow
-v_bc_name = {TitleNames{1};TitleNames{2};TitleNames{9};'Sum';'T'};
-v_bc = [mean(HQflows{1,2});mean(HQflows{2,2});mean(HQflows{9,2});TotalInletFlow;T];
-v_bcstd = [std(HQflows{1,4});std(HQflows{2,4});std(HQflows{9,4});TotalInletFlowStd;0];
+v_bc_name = {TitleNames{1};TitleNames{2};TitleNames{9};'Sum';'T';'dt'};
+v_bc = [mean(HQflows{1,2});mean(HQflows{2,2});mean(HQflows{9,2});TotalInletFlow;T;(time(2)-time(1))];
+v_bcstd = [std(HQflows{1,4});std(HQflows{2,4});std(HQflows{9,4});TotalInletFlowStd;0;0];
 BFF_name = {'MCA_L';'MCA_R';'ACA_L';'ACA_R';'PCA_L';'PCA_R'};
-outputname = strcat(path2labels,'\',foldername,'\Flow_ModelConfig_auto.xlsx'); %File Name in location of subject
+outputname = strcat(path2labels,'\',foldername,'\Flow_config.xlsx'); %File Name in location of subject
 writecell(v_bc_name, outputname, 'Sheet', 'BC', 'Range', 'A1');
 writematrix([v_bc v_bcstd], outputname, 'Sheet', 'BC', 'Range', 'B1');
 writecell(BFF_name, outputname, 'Sheet', 'BFF', 'Range', 'A1');
@@ -79,11 +117,11 @@ writematrix(BFF, outputname, 'Sheet', 'BFF', 'Range', 'B1');
 %     'Left ACA_T_resolved','Right ACA_T_resolved',...
 %     'Left PCA_T_resolved','Right PCA_T_resolved',...
 %     'Basilar_T_resolved'}; %for saving to comply with current pipeline, but should change eventually
-sheetNames = {'Left ICA','Right ICA',...
-    'Left MCA','Right MCA',...
-    'Left ACA','Right ACA',...
-    'Left PCA','Right PCA',...
-    'Basilar'}; %for saving to comply with current pipeline, but should change eventually
+sheetNames = {'L_ICA','R_ICA',...
+    'L_MCA','R_MCA',...
+    'L_ACA','R_ACA',...
+    'L_PCA','R_PCA',...
+    'BA'}; %for saving to comply with current pipeline, but should change eventually
 for i = 1:9
     y = HQflows{i,2}; x = time;
     % Define the parameter value outside the fittype
@@ -95,16 +133,16 @@ for i = 1:9
     coeffNames = coeffnames(V); % Get the coefficient names
     C = coeffvalues(V); % Get the coefficient values
     sheet=sheetNames{i};
-
+    coeffsheetname=strcat(sheet,'_Coeffs');
+    rawsheetname=strcat(sheet,'_Raw');
     % Write the coefficient data to the excel file
-    writecell(coeffNames, outputname, 'Sheet', sheet, 'Range', 'A1');
-    writematrix(C', outputname, 'Sheet', sheet, 'Range', 'B1');
-    
-    rawsheetname=strcat(sheet,' raw');
+    writecell(coeffNames, outputname, 'Sheet', coeffsheetname, 'Range', 'A1');
+    writematrix(C', outputname, 'Sheet', coeffsheetname, 'Range', 'B1');
+
     % Write in the raw flows, error, and time (for plotting or comparing the
     % model against)
-    FlowNames={'flow_mean';'flow_std';'time'};
-    FlowVals=[y;HQflows{i,3};time];
+    FlowNames={'time';'flow_mean';'flow_std';'Normalized Mean';'Normalized std'};
+    FlowVals=[time;y;HQflows{i,3};HQflows{i,5};HQflows{i,6}];
     writecell(FlowNames, outputname, 'Sheet', rawsheetname, 'Range', 'A1');
     writematrix(FlowVals, outputname, 'Sheet', rawsheetname, 'Range', 'B1');
 
@@ -113,8 +151,13 @@ for i = 1:9
     FitFlow(i,:)=myEquation(C(1),C(2),C(3),C(4),C(5),C(6),C(7),C(8),C(9),C(10),C(11),C(12),C(13),C(14),C(15),C(16),C(17),C(18),C(19), FitTime, T);
     FlowNames={'InterpFlow';'InterpTime'};
     FlowVals=[FitFlow(i,:);FitTime];
-    writecell(FlowNames, outputname, 'Sheet', rawsheetname, 'Range', 'A4');
-    writematrix(FlowVals, outputname, 'Sheet', rawsheetname, 'Range', 'B4');
+    writecell(FlowNames, outputname, 'Sheet', rawsheetname, 'Range', 'A6');
+    writematrix(FlowVals, outputname, 'Sheet', rawsheetname, 'Range', 'B6');
+    if i>2 && i<9
+        fprintf('You''ve activated me!\n')
+        writecell({'offset'}, outputname, 'Sheet', rawsheetname, 'Range', 'A8');
+        writematrix(correction(i-2), outputname, 'Sheet', rawsheetname, 'Range', 'B8');
+    end
 end
 
 if plotflag ~= 0
@@ -122,34 +165,38 @@ if plotflag ~= 0
     Mins=zeros([1,9]);
     Maxs=zeros([1,9]);
     for i=1:9
-        mn=HQflows{i,2};
-        Mins(i)=min(HQflows{i,1}(:))-0.05*min(HQflows{i,1}(:));
+        %mn = HQflows{i,2};
+        Mins(i) = min(HQflows{i,7}(:))-0.05*min(HQflows{i,7}(:));
         if rem(i,2) == 0
             Mins((i-1):i)=min([Mins(i-1) Mins(i)]);
         end
-        Maxs(i)=max(HQflows{i,1}(:))+0.05*max(HQflows{i,1}(:));
+        Maxs(i) = max(HQflows{i,7}(:))+0.05*max(HQflows{i,7}(:));
         if rem(i,2) == 0
             Maxs((i-1):i)=max([Maxs(i-1) Maxs(i)]);
         end
     end
-    %% plot HQ flow
+    %% plot HQ flow, right now it's plotting normalized flow traces. 
+    %% To make it plot raw traces, change 5->2 6->3, and 7->1 for HQflow 
     figure(1)
     tiledlayout(5,2);
     for i=1:9
         nexttile
-        MEAN=HQflows{i,2}';
-        STD=HQflows{i,3}';
+        MEAN=HQflows{i,5}';
+        STD=HQflows{i,6}';
         h=fill([time';flipud(time')],[MEAN-STD;flipud(MEAN+STD)],[0 0 0],'Linestyle','None');
         set(h,'facealpha',.3)
         hold on
         if plotraw == 1
-            rflow=HQflows{i,1};
+            plot(time,MEAN,'k*','MarkerSize',2)
+            rflow=HQflows{i,7};
             for j=1:length(rflow(:,1))
                 plot(time,rflow(j,:),'-','Color',[0.2 0.5 0.9 0.3])
             end
+        else
+            plot(time,MEAN,'k*','MarkerSize',2)
         end
         plot(time,MEAN,'k*','MarkerSize',2)
-        plot(FitTime,FitFlow(i,:),'k-')
+        %plot(FitTime,FitFlow(i,:),'k-')
         title(TitleNames{i})
         ylim([Mins(i) Maxs(i)])
         xlim([0 max(time)])
@@ -159,6 +206,7 @@ if plotflag ~= 0
     lgd.Layout.Tile = 10;
     %% Plot Bond Graph Results - BLANK FOR NOW
 end
+fprintf('Done Flow Auto Pipeline\n')
 %% Custom function that incorporates coefficients and parameters
 function y = myEquation(a0,a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,a6,b6,a7,b7,a8,b8,a9,b9, x, T)
     y= a0 + a1*cos(2*pi*x/T) + b1*sin(2*pi*x/T)+ ...

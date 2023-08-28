@@ -1,7 +1,8 @@
 function [V,dcminfo] = shuffleDCM(path,PWD,flip)
 cd(path)
 DIR=dir(path);
-Exp={'i\d*.MRDC.(\d*)$';'.*-(\d*).dcm$'};
+Exp={'i\d*.MRDC.(\d*)$';
+    '.*-(\d*).dcm$'};
 expID=0;
 flag=0;
 for i=1:length(DIR)
