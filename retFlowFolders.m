@@ -1,4 +1,22 @@
 function [Anatpath,APpath,LRpath,SIpath] = retFlowFolders(path2flow,Vendor,varargin)
+% retFlowFolders researches for the variable folder naming of 4Dflow data
+%
+% path2flow: Path to source directory with all flow folders
+% Vendor: Input if naming should follow GE convention, or Siemens.
+% varargin: You can optionally input the resolution ("0.5" or ".5") if
+% there is more than one 4Dflow data set in your sourcedirectory
+%
+% NOTE: If your folder namings are dramatically different thant the regular
+% expression orded FLOW, then Anat, AP, SI, LR, either change the
+% expression or rename your folders.
+%
+% Outputs: [Anatpath,APpath,LRpath,SIpath]
+%   paths: Each path returned is the full path to the 4D flow data for each
+%   collection direction and magnitude image.
+%
+% Used by: loadDICOM.m
+%
+% Dependencies: None    
     TestDir=dir(path2flow);
     RegExp={'.*FLOW.*(\d{1}(\.)?\d{1}).*Anat.*',...
         '.*FLOW.*(\d{1}(\.)?\d{1}).*AP.*',...
