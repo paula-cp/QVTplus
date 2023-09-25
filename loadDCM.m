@@ -3,18 +3,17 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
     VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
     timeMIPcrossection,segmentFull,vTimeFrameave,MAGcrossection, imageData, ...
     bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullEx,autoFlow,pixelSpace, VoxDims, PIvel_val] = loadDCM(directory,handles)
-%loadDCM: Reads in header information and reconstructed data 
-%(velocity, vmean, etc.) and transforms data into usable matlab variables.
-%   Used by: paramMap.m
-%   Dependencies: load_dat.m, background_phase_correction.m, evaluate_poly.m
-%     calc_angio.m, feature_extraction.m, paramMap_params_new.m, slidingThreshold.m
+% loadDCM loads dicom files and then processes them.
 %
-% Initial function by the New Zealand brain Institute
-%(NZBRI) and Alireza Sharifzadeh-Kermani University of Auckland
+% It retursn to much to discuss, but it basically passes through all the
+% processed data to paramMap.
 %
+% Outputs: Everything
 %
-%Updated by Sergio Dempsey
-%Date:30/05/2023
+% Used by: autoCollectFlow.m, and any separate functions to compute any
+% saved data (PITC codes, Damping codes etc)
+%
+% Dependencies: ShuffleDCM.m and all QVT processing codes
 %% Initialization
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 VENC = 800; %may change depending on participant

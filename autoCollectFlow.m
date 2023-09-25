@@ -7,8 +7,6 @@ function [] = autoCollectFlow(SVPATH)
 % This way, we have much more control on the processing, and can pull right
 % from the saved data_struct
 %
-% values
-%
 % Used by: paramMap.m
 % Dependencies: readLabels.m
     Artery = ["L ICA";"R ICA";"L MCA";"R MCA";"L ACA";"R ACA";"L PCA";"R PCA";"BA";"Exclude"];

@@ -1,4 +1,16 @@
 function RealVal = readLabels(path)
+% readLabels reads the saved input table from QVT+,
+%
+% path: All that's needed is the path to the "LabelsQVT.csv"
+%
+% Outputs: [RealVal]
+%   RealVal: A poorly named matrix which is just the cells of the original
+%   table after being read from the csvs
+%
+% Used by: autoCollectFlow.m, and any separate functions to compute any
+% saved data (PITC codes, Damping codes etc)
+%
+% Dependencies: None    
     if exist(fullfile(path,'LabelsQVT.csv')) == 2
         fprintf('Loaded previous labels.\n')
         cont=1;
@@ -31,7 +43,6 @@ function RealVal = readLabels(path)
             end
             B=cell([1 3]);
             B(1)=A(1);
-            %B(2)=A(2);
             B(2)={erase(A{2},"""")};
             B(3)={erase(A{end},"""")};
             if length(MergeArray)>0
