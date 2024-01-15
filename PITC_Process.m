@@ -15,7 +15,9 @@
 %
 % Dependencies: compute_conn.m, compute_length.m
 %% Initialise
-path2data=''; % just to the root folder, can only need this if not using bids
+clear;clc;
+subject='sub-020';
+path2data=strcat('C:\Users\sdem348\Desktop\Dempsey2023MultiRes_Cohort\derivatives\QVT\',subject); % just to the root folder, can only need this if not using bids
 SearchDist=8;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
@@ -39,7 +41,7 @@ ICA_r = Labels{2,2} ;ICA_r = str2num(ICA_r);
 BA = Labels{9,2}    ;BA = str2num(BA);
 Exclude=Labels{10,2};Exclude = str2num(Exclude);
 LR=Labels{10,3}     ;LR = str2num(LR);
-startroots = {ICA_l,ICA_r,BA};
+startroots = {ICA_l,ICA_r};
 %startroots = {ICA_r,ICA_l,BA}; %SWITCHED LR SIDE
 BranchList=data_struct.branchList;
 BranchList=[BranchList [1:length(BranchList)]'];

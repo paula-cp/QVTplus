@@ -3,7 +3,7 @@ cd(path)
 DIR=dir(path);
 Exp={'i\d*.MRDC.(\d*)$';
     '.*-(\d*).dcm$';
-    '.*i(\d*)$'};
+    '.*i(\d*)$';};
 expID=0;
 flag=0;
 Count=1;

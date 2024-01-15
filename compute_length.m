@@ -1,29 +1,28 @@
-
 function [PI_scat,PIvel_scat,G] = compute_length(Mats,BranchList,PI,PIvel_val,Quality)
-% compute_length processes the distance of points from their root vessels.
-%
-%       Mats: the oxg connectivity matrix of o outlets, and max (g) generations fromt root to farthers outlet
-% Branchlist: nx6 array with n cross sections, which store [x,y,x,vessel number, vessel cross section location, and global array index [1:n]']
-%         PI: nx1 PI values from n cross sections
-%  PIvel_val: nx1 PI computed from velocity values from n cross sections.
-%             If not computed, leave as PI
-%    Quality: nx1 Quality values from n cross sections.
-%
-% Outputs: [PI_scat,PIvel_scat,G]
-%   PI_scat: cx4 for c points processed from connectivity matrix vessels,
-%       which store [position from root, PI, global cross section number index
-%       (from branch list), and Quality]
-%   PI_scat: same as PI_scat, but storing velocity PI
-%   G: storred a cx1 cell with values as strings of the vessel numer. Can
-%       be used for grouping in plots
-%
-% Used by: PITC_Step1.m
-% Dependencies: None
+    % compute_length processes the distance of points from their root vessels.
+    %
+    %       Mats: the oxg connectivity matrix of o outlets, and max (g) generations fromt root to farthers outlet
+    % Branchlist: nx6 array with n cross sections, which store [x,y,x,vessel number, vessel cross section location, and global array index [1:n]']
+    %         PI: nx1 PI values from n cross sections
+    %  PIvel_val: nx1 PI computed from velocity values from n cross sections.
+    %             If not computed, leave as PI
+    %    Quality: nx1 Quality values from n cross sections.
+    %
+    % Outputs: [PI_scat,PIvel_scat,G]
+    %   PI_scat: cx4 for c points processed from connectivity matrix vessels,
+    %       which store [position from root, PI, global cross section number index
+    %       (from branch list), and Quality]
+    %   PI_scat: same as PI_scat, but storing velocity PI
+    %   G: storred a cx1 cell with values as strings of the vessel numer. Can
+    %       be used for grouping in plots
+    %
+    % Used by: PITC_Step1.m
+    % Dependencies: None
     
     PI_scat=[]; %Preallocate Empty Array for PI flow
     PIvel_scat=[]; %Preallocate Empty Array for PI velocity
     G = []; %Preallocate Empty Group Array (group is vessel Number)
-    for root=1:3 %for each root
+    for root=1:length(Mats) %for each root
         ConMat=Mats{root}; %Grab the root connectivity
         for i=1:length(ConMat(:,1)) %For each row
             for j=1:length(ConMat(1,:)) %For each generation

@@ -15,10 +15,11 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
 %
 % Dependencies: ShuffleDCM.m and all QVT processing codes
 %% Initialization
+clc
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
-res='';%'0.5'; %Only needed if you have multiple resolutions in your patient folder 
+res='1.4';%'0.5'; %Only needed if you have multiple resolutions in your patient folder 
 % AND the resolution is named in the file folder as "0.5" or 05. Put in
 % with a dot here.
 Vendor='GE'; %Can also put GE
@@ -26,10 +27,13 @@ Vendor='GE'; %Can also put GE
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Or do
 addpath(pwd)
+
 set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
 cd(directory)
+%directory
 [Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
-
+%whos APpath
+%%
 %Load each velocity and put into phase matrix
 [VAP,~] = shuffleDCM(APpath,directory,0);
 [a,c,b,d]=size(VAP);
@@ -117,7 +121,7 @@ imageData.Header = dcminfo;
 %% Feature Extraction
 % Get trim and create the centerline data
 sortingCriteria = 3; %sorts branches by junctions/intersects 
-spurLength = 15; %minimum branch length (removes short spurs)
+spurLength = 8; %minimum branch length (removes short spurs)
 [~,~,branchList,~] = feature_extraction(sortingCriteria,spurLength,vMean,segment,handles);
 
 %% You can load another segmentation here if you want which will overlap on images

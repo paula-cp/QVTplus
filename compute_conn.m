@@ -34,7 +34,8 @@ function Mats = compute_conn(startroots,BranchList,SearchDist,LR)
     end
     %% Compute Connectivity for each root
     Avoid=[]; %Avoid vector stores any vessels that are processed so we don't double dip
-    for root=1:3 %ICA's and basilar
+    flg=0;
+    for root=1:length(startroots) %ICA's and basilar
         startr = startroots{root}; %Start at whatever root based on startroot vessel numbers
         ConVec = cell([1,20]); %Empty connectivity matrix with up to 20 generations (no more than than will ever be needed)
         ConVec(:,:) = {[0 0]}; %Initialise all cells (this will help identify filled slots later)
@@ -73,6 +74,12 @@ function Mats = compute_conn(startroots,BranchList,SearchDist,LR)
                     [preused,~]=find(Options(:,1)==AvoidF(j)); %Find index of points to avoid
                     if ~isempty(preused)
                         Options(preused,:)=[]; %Empty out the options
+                    end
+                end
+                if flg==0
+                    if root==3
+                        SearchDist=SearchDist*1.5;
+                        flg=1;
                     end
                 end
                 [Options]=search_local_points(Pend,Options,SearchDist); %Return point options from Options around Pend within SearchDist

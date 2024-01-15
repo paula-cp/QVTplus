@@ -256,7 +256,7 @@ fig = figure(1); cla
 %set(fig,'Position',[2325 57 1508 1047]); %WORK
 %set(fig,'Position',[1856 37 1416 954]); %HOME
 
-%hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0.0); %bw iso angiogram
+%hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0.3); %bw iso angiogram
 %reducepatch(hpatch,0.7);
 %set(hpatch,'FaceColor','white','EdgeColor', 'none','PickableParts','none');
 set(gcf,'color','black');
@@ -1219,4 +1219,38 @@ function ParameterTool_CloseRequestFcn(hObject, eventdata, handles)
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+% 
+% 
+% % --- Executes on button press in calcPWV.
+% function calcPWV_Callback(hObject, eventdata, handles)
+% % hObject    handle to calcPWV (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% global branchList res timeres flowPulsatile_val SavePath 
+% 
+% pwvTool(branchList,res,timeres,flowPulsatile_val,SavePath);
+% 
+% 
+% % --- Executes during object deletion, before destroying properties.
+% function calcPWV_DeleteFcn(hObject, eventdata, handles)
+% % hObject    handle to calcPWV (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% delete(hObject);
+% 
+% % --- Executes on button press in calcTCD.
+% function calcTCD_Callback(hObject, eventdata, handles)
+% % hObject    handle to calcTCD (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% global branchList res timeres flowPulsatile_val SavePath 
+% 
+% pwvTool(branchList,res,timeres,flowPulsatile_val,SavePath);
+% 
+% % --- Executes during object deletion, before destroying properties.
+% function calcTCD_DeleteFcn(hObject, eventdata, handles)
+% % hObject    handle to calcTCD (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% delete(hObject);
 

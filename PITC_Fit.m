@@ -6,7 +6,7 @@
 % Outputs: The PITC slopes for each root, it can optionally save a figure
 % with all 3 fits.
 plotFlag=1; %keep 1 if you want to plot and save results to population
-path2data='C:\Users\sdem348\Desktop\derivatives\QVT\sub-001'; % to the QVT data folder
+path2data='C:\Users\sdem348\Desktop\Gonzalo\derivatives\QVT\sub-001\breathing'; % to the QVT data folder
 %% Crop Data by Quality>Thresh as a Baseline (Plot as Well)
 load(fullfile(path2data,'RawDamping.mat'));
 %%%%%%%%%%%%%%%%%%%%%%%%%
