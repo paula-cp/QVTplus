@@ -2,9 +2,11 @@ function [V,dcminfo] = shuffleDCM(path,PWD,flip)
 cd(path)
 DIR=dir(path);
 Exp={'i\d*.MRDC.(\d*)$';
-    '.*-(\d*).dcm$'};
+    '.*-(\d*).dcm$';
+    '.*i(\d*)$';};
 expID=0;
 flag=0;
+Count=1;
 for i=1:length(DIR)
     Name=DIR(i).name;
     if expID==0
@@ -20,9 +22,14 @@ for i=1:length(DIR)
         [match] = regexp(Name,Exp{expID},'tokens');
         if length(match) == 1
             idx=str2double(match{1});
-            SortedDir{idx,1}=Name;
+            Nums(Count,:)=[idx i];
+            Count=Count+1;
         end
     end
+end
+Sorted = sortrows(Nums,1);
+for i=1:length(Sorted)
+    SortedDir{i,1}=DIR(Sorted(i,2)).name;
 end
 
 filename=SortedDir{1};

@@ -206,7 +206,3 @@ end
 set(handles.TextUpdate,'String','All Data Loaded'); drawnow;
 
 return
-
-
-
-

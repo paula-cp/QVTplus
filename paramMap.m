@@ -93,6 +93,7 @@ global dcm_obj fig hpatch hscatter Labeltxt cbar hDataTip SavePath
 global MAGcrossection bnumMeanFlow bnumStdvFlow StdvFromMean
 global VplanesAllx VplanesAlly VplanesAllz imageData caseFilePath
 global vesselsAnalyzed allNotes segmentFullJS autoFlow pixelSpace
+global VoxDims PIvel_val
 %SD
 
 % Initial Variables
@@ -173,12 +174,15 @@ if  fileIndx > 1  %if a pre-processed case is selected
     VplanesAlly = Vel_Time_Res.VplanesAlly;
     VplanesAllz = Vel_Time_Res.VplanesAllz;
     
+    VoxDims = data_struct.VoxDims;
+    PIvel_val = data_struct.PIvel_val;
     
     set(handles.TextUpdate,'String','Loading Complete'); drawnow;
     pause(1)
     set(handles.TextUpdate,'String','Please Select Analysis Plane Location'); drawnow;
     if autoFlow == 1
         autoCollectFlow(directory)
+        %autoCollectDamping(directory)
     end
 
 else %Load in pcvipr data from scratch
@@ -202,7 +206,8 @@ else %Load in pcvipr data from scratch
         maxVel_val,PI_val,RI_val,flowPulsatile_val,velMean_val, ...
         VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
         timeMIPcrossection,segmentFull,vTimeFrameave,MAGcrossection, imageData, ...
-        bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullJS,autoFlow,pixelSpace] ...  
+        bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullJS,autoFlow,pixelSpace,...
+        VoxDims, PIvel_val] ...  
         = loadDCM(directory,handles); %SD Segment full
     end 
 
@@ -219,7 +224,7 @@ else %Load in pcvipr data from scratch
     % save the data
     saveQVTData(directory,area_val,diam_val,branchList,flowPerHeartCycle_val,maxVel_val,velMean_val,nframes,matrix,res,timeres,...
     VENC,segment,PI_val,RI_val,flowPulsatile_val,r, timeMIPcrossection ,MAGcrossection,segmentFull,segmentFullJS,autoFlow,vTimeFrameave,...
-    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath)
+    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath,VoxDims,PIvel_val)
     
     % This will be the name used for the Excel file
     finalFolder = regexp(directory,filesep,'split');
@@ -231,6 +236,7 @@ else %Load in pcvipr data from scratch
     SavePath = [directory filesep SummaryName];
     if autoFlow == 1
         autoCollectFlow(directory)
+        %autoCollectDamping(directory)
     end
     % Create excel files save summary data
     col_header = ({'Vessel Label', 'Centerline Point', 'Notes',['Max Velocity < ' num2str(VENC) 'cm/s'], ...
@@ -250,7 +256,7 @@ fig = figure(1); cla
 %set(fig,'Position',[2325 57 1508 1047]); %WORK
 %set(fig,'Position',[1856 37 1416 954]); %HOME
 
-%hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0.0); %bw iso angiogram
+%hpatch = patch(isosurface(permute(segment,[2 1 3]),0.5),'FaceAlpha',0.3); %bw iso angiogram
 %reducepatch(hpatch,0.7);
 %set(hpatch,'FaceColor','white','EdgeColor', 'none','PickableParts','none');
 set(gcf,'color','black');
@@ -404,6 +410,7 @@ switch str{val}
         Labeltxt = {'Pulsatility Index: ',  ' ';'Average: ',' '};
         hscatter.CData = PI_val;
         caxis(fig.CurrentAxes,[0 2])
+        caxis(fig.CurrentAxes,[0 1])
         cl = caxis(fig.CurrentAxes);
         set(get(cbar,'xlabel'),'string','Pulsatility Index','fontsize',16,'Color','white');
         set(cbar,'FontSize',16,'color','white');
@@ -520,7 +527,7 @@ global area_val flowPerHeartCycle_val maxVel_val r res nframes matrix timeres
 global flowPulsatile_val PI_val RI_val velMean_val directory VENC segment
 global VplanesAllx VplanesAlly VplanesAllz PointLabel diam_val MAGcrossection 
 global segmentFullJS autoFlow vTimeFrameave Planes bnumMeanFlow bnumStdvFlow
-global imageData pixelSpace StdvFromMean
+global imageData pixelSpace StdvFromMean VoxDims PIvel_val
 
 info_struct = getCursorInfo(dcm_obj);
 ptList = [info_struct.Position];
@@ -637,7 +644,7 @@ end
 set(handles.TextUpdate,'String','Re Saving Data with Manual Update');drawnow;
 saveQVTData(directory,area_val,diam_val,branchList,flowPerHeartCycle_val,maxVel_val,velMean_val,nframes,matrix,res,timeres,...
     VENC,segment,PI_val,RI_val,flowPulsatile_val,r, timeMIPcrossection ,MAGcrossection,segmentFull,segmentFullJS,autoFlow,vTimeFrameave,...
-    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath)
+    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath,VoxDims,PIvel_val)
 
 SavePoint_Callback(hObject, eventdata, handles);
 parameter_choice_Callback(hObject, eventdata, handles);
@@ -1212,4 +1219,38 @@ function ParameterTool_CloseRequestFcn(hObject, eventdata, handles)
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+% 
+% 
+% % --- Executes on button press in calcPWV.
+% function calcPWV_Callback(hObject, eventdata, handles)
+% % hObject    handle to calcPWV (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% global branchList res timeres flowPulsatile_val SavePath 
+% 
+% pwvTool(branchList,res,timeres,flowPulsatile_val,SavePath);
+% 
+% 
+% % --- Executes during object deletion, before destroying properties.
+% function calcPWV_DeleteFcn(hObject, eventdata, handles)
+% % hObject    handle to calcPWV (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% delete(hObject);
+% 
+% % --- Executes on button press in calcTCD.
+% function calcTCD_Callback(hObject, eventdata, handles)
+% % hObject    handle to calcTCD (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% global branchList res timeres flowPulsatile_val SavePath 
+% 
+% pwvTool(branchList,res,timeres,flowPulsatile_val,SavePath);
+% 
+% % --- Executes during object deletion, before destroying properties.
+% function calcTCD_DeleteFcn(hObject, eventdata, handles)
+% % hObject    handle to calcTCD (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% delete(hObject);
 

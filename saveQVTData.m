@@ -1,6 +1,6 @@
 function [] = saveQVTData(directory,area_val,diam_val,branchList,flowPerHeartCycle_val,maxVel_val,velMean_val,nframes,matrix,res,timeres,...
     VENC,segment,PI_val,RI_val,flowPulsatile_val,r, timeMIPcrossection ,MAGcrossection,segmentFull,segmentFullJS,autoFlow,vTimeFrameave,...
-    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath)
+    Planes,bnumMeanFlow,bnumStdvFlow,StdvFromMean,pixelSpace,VplanesAllx,VplanesAlly,VplanesAllz,imageData,caseFilePath,VoxDims,PIvel_val)
 
     data_struct = [];
     data_struct.directory = directory;
@@ -31,6 +31,8 @@ function [] = saveQVTData(directory,area_val,diam_val,branchList,flowPerHeartCyc
     data_struct.bnumStdvFlow = bnumStdvFlow;
     data_struct.StdvFromMean = StdvFromMean;
     data_struct.pixelSpace = pixelSpace;
+    data_struct.VoxDims = VoxDims;
+    data_struct.PIvel_val =PIvel_val;
     
     Vel_Time_Res.VplanesAllx = VplanesAllx; %TR vel planes (uninterped)
     Vel_Time_Res.VplanesAlly = VplanesAlly;
