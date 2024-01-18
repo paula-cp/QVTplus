@@ -1,5 +1,5 @@
-function [] = plot_XYData(xData,yData,Col,MrkrSz,mdlPlot,yLIMS,xLIMS,xTitle,yTitle,Title,FS)
-    scatter(xData,yData,MrkrSz,'MarkerFaceColor',Col,'MarkerEdgeColor',Col,'MarkerFaceAlpha',0.5,'MarkerEdgeAlpha',.75)
+function [] = plot_XYData(xData,yData,Col,MrkrSz,mdlPlot,yLIMS,xLIMS,xTitle,yTitle,Title,FS,LGND)
+    scatter(xData,yData,MrkrSz,'MarkerFaceColor',Col,'MarkerEdgeColor',Col,'MarkerFaceAlpha',0.4,'MarkerEdgeAlpha',.7)
     hold on
     plot(mdlPlot(:,1),mdlPlot(:,2),'k-')
     plot(mdlPlot(:,1),mdlPlot(:,3),'k--')
@@ -14,8 +14,10 @@ function [] = plot_XYData(xData,yData,Col,MrkrSz,mdlPlot,yLIMS,xLIMS,xTitle,yTit
         minX=-xLIMS;
         xlim([minX maxX])
     end
-    lgnd=legend('Subjects','Linear Fit','2\sigma bounds');
-    set(lgnd,'Location','NorthWest','FontSize',FS(1),'AutoUpdate','off')
+    if ~isempty(LGND)
+        lgn=legend(LGND);
+        set(lgn,'Location','NorthWest','FontSize',FS(1),'AutoUpdate','off')
+    end
     if ~isempty(xTitle)
         xlabel(xTitle,'FontSize',FS(2),'FontWeight','Bold')
     end
@@ -27,3 +29,4 @@ function [] = plot_XYData(xData,yData,Col,MrkrSz,mdlPlot,yLIMS,xLIMS,xTitle,yTit
     end
     grid on
     box on
+end

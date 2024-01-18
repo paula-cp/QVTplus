@@ -1,10 +1,12 @@
-function [PI_scat] = dev_enc_PITC_process(data_struct,Labels,path2data,params)
+function [PI_scat] = enc_PITC_process(data_struct,Labels,path2data,params,SDist)
     %% Load Necessities from labels and processed data
     if ~isempty(path2data)
         if params.rerun == 0 %Don't rerun unless you want to for some reason
             if isfile(fullfile(path2data,'RawPITC.mat'))
                 ProcessFlag=0;
                 load(fullfile(path2data,'RawPITC.mat'));
+            else
+                ProcessFlag=1;
             end
         else
             ProcessFlag=1;
@@ -19,15 +21,50 @@ function [PI_scat] = dev_enc_PITC_process(data_struct,Labels,path2data,params)
         Exclude=Labels{10,2};Exclude = str2num(Exclude);
         LR=Labels{10,3}     ;LR = str2num(LR);
         startroots = {ICA_l,ICA_r,BA};
-        ds = DataStorage();  
-        my_app_handle=PITCinteractive(data_struct, startroots, LR, Exclude,ds);
-        uiwait(my_app_handle.UIFigure);
-        SearchDist=ds.dataArea.SearchDist;
-        PI_scat=ds.dataArea.PI_scat;
-        G=ds.dataArea.G;
-        Mats=ds.dataArea.Mats;
-        if params.SaveData==1
-            save(fullfile(path2labels,'RawPITC.mat'),'PI_scat','G','Mats','SearchDist');
+        if isempty(SDist)
+            ds = DataStorage();  
+            my_app_handle=PITCinteractive(data_struct, startroots, LR, Exclude,ds);
+            uiwait(my_app_handle.UIFigure);
+            SearchDist=ds.dataArea.SearchDist;
+            PI_scat=ds.dataArea.PI_scat;
+            G=ds.dataArea.G;
+            Mats=ds.dataArea.Mats;
+            if params.SaveData==1
+                save(fullfile(path2data,'RawPITC.mat'),'PI_scat','G','Mats','SearchDist');
+            end
+        else
+            BranchList=data_struct.branchList;
+            BranchList=[BranchList [1:length(BranchList)]'];
+            for i=1:length(Exclude)
+                [idx,~]=find(BranchList(:,4)==Exclude(i));
+                BranchList(idx,:)=[];
+            end
+            Mats=compute_conn(startroots,BranchList,SDist,LR);
+            save(fullfile(path2data,'ConnectivityMaps.mat'),'Mats');
+            %% LENGTH SECTION
+            load(fullfile(path2data,'ConnectivityMaps.mat'));
+            BranchList=data_struct.branchList;
+            BranchList=[BranchList [1:length(BranchList)]'];
+            PI=data_struct.PI_val;
+            Quality=data_struct.StdvFromMean;
+            MaxVel=data_struct.PIvel_val;
+            VoxDims=data_struct.VoxDims;
+            % Apply the voxel dimensions to the matrix location of the branch lists
+            BranchList(:,1)=VoxDims(1).*BranchList(:,1);
+            BranchList(:,2)=VoxDims(2).*BranchList(:,2);
+            BranchList(:,3)=VoxDims(3).*BranchList(:,3);
+            % Process Velocity Based Pulsatility (default output is flow based)
+            PIvel_val=zeros([length(MaxVel(:,1)) 1]);
+            for i=1:length(MaxVel(:,1))
+                PIvel_val(i)=(max(MaxVel(i,:))-min(MaxVel(i,:)))./(mean(MaxVel(i,:)));
+            end
+            % Compute Lengths Below
+            [PI_scat,~,G] = compute_length(Mats,BranchList,PI,PIvel_val,Quality);
+
+            SearchDist=SDist;
+            if params.SaveData==1
+                save(fullfile(path2data,'RawPITC.mat'),'PI_scat','G','Mats','SearchDist');
+            end
         end
     end
 end

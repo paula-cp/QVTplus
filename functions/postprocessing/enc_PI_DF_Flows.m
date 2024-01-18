@@ -1,4 +1,4 @@
-function [DF,PI,Flows,FlowErr] = dev_enc_PI_DF_Flows(PI_scat,data_struct,Labels,path2data,params)
+function [DF,PI,Flows,FlowErr] = enc_PI_DF_Flows(PI_scat,data_struct,Labels,path2data,params)
     % Load Necessities from labels and processed data
     load(fullfile(path2data,'RawDamping.mat'));
     %%
@@ -13,31 +13,35 @@ function [DF,PI,Flows,FlowErr] = dev_enc_PI_DF_Flows(PI_scat,data_struct,Labels,
     Flows=zeros([20 9]); %%assuming 20 cardiac phases
     FlowErr=zeros([20 9]); %%assuming 20 cardiac phases
     for i=1:3
-        ves = Labels{roots(i),2};
-        ves = str2num(ves);
-        if length(ves)>1
-            ves = Labels{roots(i),3};
-            ves = str2num(ves);
-            ves=ves(1);
-        end
         LOC = Labels{roots(i),3};
         LOC=str2num(LOC);
-        if length(LOC)>1
-            temp=LOC;
-            LOC=temp(2);
-            ves=temp(1);
-        end
-        [idx1,~]=find(BranchList(:,4)==ves);
-        Data=BranchList(idx1,:);
-        [idx2,~]=find(Data(:,5)==LOC);
-        VesLoc=Data(idx2,:);
-        [idx3,~]=find(PI_scat(:,3,i)==VesLoc(6));
-        StartPI(i,:)=abs(PI_scat(idx3,:,i));
-        PI(1,roots(i))=abs(PI_scat(idx3,2,i));
-        switch params.FlowType
-            case 'Local'
-                Flows(:,roots(i))=mean(FlowData((VesLoc(6)-2):(VesLoc(6)+2),:));
-                FlowErr(:,roots(i))=std(FlowData((VesLoc(6)-2):(VesLoc(6)+2),:));
+        if length(LOC)>=1
+            ves = Labels{roots(i),2};
+            ves = str2num(ves);
+            if length(ves)>1
+                ves = Labels{roots(i),3};
+                ves = str2num(ves);
+                ves = ves(1);
+            end
+            if length(LOC)>1
+                temp=LOC;
+                LOC=temp(2);
+                ves=temp(1);
+            end
+            [idx1,~]=find(BranchList(:,4)==ves);
+            Data=BranchList(idx1,:);
+            [idx2,~]=find(Data(:,5)==LOC);
+            VesLoc=Data(idx2,:);
+            [idx3,~]=find(PI_scat(:,3,i)==VesLoc(6));
+            StartPI(i,:)=abs(PI_scat(idx3,:,i));
+            PI(1,roots(i))=abs(PI_scat(idx3,2,i));
+            switch params.FlowType
+                case 'Local'
+                    Flows(:,roots(i))=mean(FlowData((VesLoc(6)-2):(VesLoc(6)+2),:));
+                    FlowErr(:,roots(i))=std(FlowData((VesLoc(6)-2):(VesLoc(6)+2),:));
+            end
+        else
+            StartPI(i,:)=[-1 -1 -1 -1];
         end
     end
     loci=[3 5 4 6 7 8];
@@ -80,17 +84,18 @@ function [DF,PI,Flows,FlowErr] = dev_enc_PI_DF_Flows(PI_scat,data_struct,Labels,
             EndPI(i,:)=[-1 -1 -1 -1];
         end
     end
-    DF=[];
+    DF=[0 0 0];
     for k=1:3
         Matt=EndPI((1+(k-1)*2):(2+(k-1)*2),2);
         [a,~]=find(Matt(:,1)>0);
-        if length(a)<2
-            DF(k,1)=Matt(a,:)./StartPI(k,2);
-        else
-            DF(k,1)=mean(EndPI((1+(k-1)*2):(2+(k-1)*2),2))./StartPI(k,2);
+        if StartPI(k,2)>0.1
+            if length(a)==1
+                DF(1,k)=Matt(a,:)./StartPI(k,2);
+            elseif length(a)==2
+                DF(1,k)=mean(EndPI((1+(k-1)*2):(2+(k-1)*2),2))./StartPI(k,2);
+            end
         end
     end
-    DF=DF';
     if params.SaveData==1
         save(fullfile(path2data,'DFdata.mat'),'DF','EndPI','StartPI');
     end

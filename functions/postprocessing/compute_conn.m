@@ -78,7 +78,7 @@ function Mats = compute_conn(startroots,BranchList,SearchDist,LR)
                 end
                 if flg==0
                     if root==3
-                        SearchDist=SearchDist*1.5;
+                        SearchDist=SearchDist*1.0;
                         flg=1;
                     end
                 end

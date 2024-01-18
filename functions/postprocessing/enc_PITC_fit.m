@@ -1,4 +1,4 @@
-function [PITC,globalPI] = dev_enc_PITC_fit(PI_scat,path2data,params)
+function [PITC,globalPI] = enc_PITC_fit(PI_scat,path2data,params)
     %% Load Processed data
     [~,~,rootNum]=size(PI_scat);
     %===========================================
