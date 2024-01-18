@@ -1,4 +1,4 @@
-function [PI_scat,PIvel_scat,G] = compute_length(Mats,BranchList,PI,PIvel_val,Quality)
+function [PI_scat,PIvel_scat,G,XYZ] = compute_length(Mats,BranchList,PI,PIvel_val,Quality)
     % compute_length processes the distance of points from their root vessels.
     %
     %       Mats: the oxg connectivity matrix of o outlets, and max (g) generations fromt root to farthers outlet
@@ -81,6 +81,7 @@ function [PI_scat,PIvel_scat,G] = compute_length(Mats,BranchList,PI,PIvel_val,Qu
                         % Now for each vessel point from Data
                         for k=1:length(Data(:,1))
                             PI_scat(CNT,:,root)=[len , PI(Data(k,6)) , Data(k,6) , Quality(Data(k,6))]; %Store length, pulsatility, vessel location index in branchlist, and quality
+                            XYZ(CNT,:,root)=[Data(k,1:3)];
                             PIvel_scat(CNT,:,root)=[len , PIvel_val(Data(k,6)) , Data(k,6) , Quality(Data(k,6))]; %same for PI vel
                             G{CNT,1,root}=num2str(Data(k,4)); %Store vessel number as a string as well for categorical plotting
                             CNT=CNT+1; %increase count

@@ -1,0 +1,12 @@
+function [data_struct,Labels] = import_QVTplusData(path2data)
+    DataName = dir(fullfile(path2data,'*.mat'));
+    for i=1:length(DataName)
+        if strcmp(DataName(i).name(1:7),'qvtData')
+            LOC=i;
+            break
+        end
+    end
+    load(fullfile(path2data,DataName(LOC).name));
+    clear LOC DataName
+    Labels=readLabels(path2data);
+end
