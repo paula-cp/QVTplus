@@ -1,13 +1,13 @@
 A 4D Flow Processing Module to Compute the Pulsatility Index Transmission Coefficient (PITC) (Based on [Quantitative Velocity Tool (QVT)](https://github.com/uwmri/QVT))
 =========
 ## Introduction ##
-This library was developed to measure Pulsatility Transmission (PITC), some extra functionality has been added to extract time continuous boundary conditions which can be used to drive flow in cerebral hemodynamic models as well. 
-An example extrapolation of PITC is shown below from the submitted manuscript describing the biomarker.
+This library was developed to measure Pulsatility Transmission ($pi_{tc}$), some extra functionality has been added to extract time continuous boundary conditions which can be used to drive flow in cerebral hemodynamic models as well. 
+An example extrapolation of $pi_{tc}$ is shown below from the submitted manuscript describing the biomarker.
 
 ![TestSizeCoarse400](https://github.com/ABI-Animus-Laboratory/QVTplus/assets/108192400/0f48fa5a-f434-4e9f-852f-3f3d02526581)
 
 
-Major changes from QVT include the development of an improved flow  quality metric (Q) which allows the automatic extraction of the highest quality flow from each cerebral vessel. This was necessary as there are several "good" flow positions which increase the interobserver error when using this flow profile as input into patient specific modelling or when weighting the measurement of PITC.
+Major changes from QVT include the development of an improved flow  quality metric ($Q$) which allows the automatic extraction of the highest quality flow from each cerebral vessel or to drive weighted optimisation usling all 4D flow data. Can also use the flow profile as input into patient specific modelling or when weighting the measurement of $pi_{tc}$.
 
 ## Installation ##
 Requires MATLAB version > 2018
@@ -19,13 +19,29 @@ Statistics and Machine Learning Toolbox (for kmeans)
 ### Compatibility ###
 Currently, .hdf5 and .dat formatting is not supported with the PITC measurement and only loading DICOMS allow this functionality. Resolutions can now be anisotropic.
 ## Usage
-Run paramMap as per QVT, once the file has been processed, fill in the table with appropriate branch labels (P1) and sampling locations if you intend to extract local flow as well (P5). If the artery is disconnected into several segments (common in ICA) the label will change, so the connection matrix should be supplied (P2). Simply comma between numbers 67,112,etc. You must also include labels to remove posterior communicants (P3), and you can specify left and right ACA's as well in (P4). Once the small major artery Label section is full, click Done. 
+Run paramMap as per QVT, and follow standard background correction. If you are loading DICOMS, the following interactive table will load once the data  has been processed, fill in the table appropriately. For the $pi_{tc}$ analysis, a selected number of cells must be filled (P1:P4) (refer to Figure below for numbering):
+ * **P1:** Each root vessel value must be input (ICAs and BA). Typically, only one value is needed in each root.
+ * **P2:** If, for instance, the carotid siphon folds on itself and causes non-physiological branches in QVT, a connected vessel number array can be entered.
+ * **P3:** In the ``Exclude'' row, communicating arteries must be included; otherwise, the algorithm will connect vessels from the ICA to the PCAs. Other vessels can be inputted (as an array format) to stop the connectivity algorithm if desired. 
+ * **P4:** In the case where the ACAs are close together, incorrect hemispheric crossovers can occur in the algorithm. To avoid this, the left and right vessel numbers can be supplied for the ACAs, respectively.
+ * **P5:** Optionally, for selected CoW vessels, the vessel number and the centreline number can be entered; this can be used to output local $p_{\mathrm{pi}}$ for other analyses, but it is not necessary to initialise the $p_{\mathrm{tf}}$ algorithm.
 
 ![Figure2_Interaction](https://github.com/ABI-Animus-Laboratory/QVTplus/assets/108192400/c52a5d6a-3cee-49e1-9559-9ca4bcfbbbd4)
 
-Run the separate function "UPDATE" which will ask you to point to where the subject data is saved. It will take the label table and measure PITC using Q weights by first connecting the branches and then assigning pulsatility distance (see manuscript for details). If flow locations were also specified, run flow_pipeline for flow and error extraction. The average flow (based on quality cutoff) is used for boundary conditions. Plots of flow and error are also included.
+**NOTE:** It you wish to automatically process root dependant damping factor as well, fill out the entire table including label numbers.
 
-If at any point you want to manually save your own best chosen flow, follow standard QVT instruction and run flow_pipeline_manual, filling in necessary paths at top of script.
+Run the separate wrapper function "mainPITC.m" which will ask you to point to where the subject data is saved. It will take the label table and data and begin processing $pi_{tc}$. Eventually, an interactive figure will open which directs you to input a search distance for vessels, appropriately move the slider under the entire vasculature is corrected. 
+
+![example](https://github.com/ABI-Animus-Laboratory/QVTplus/assets/108192400/2a2fc2c1-38bb-49a4-b477-0829f57751e7)
+
+
+**NOTE:** Be conservative with the distance as large distances may cause erroneous connections. If the slider is not working correctly, please contact below as this is in development as we get more 4D flow cases.
+
+Once a search distance has been input, click done and the rest of the measurements will proceed automatically using Q weights by first connecting the branches and then assigning pulsatility distance (see manuscript for details). The results will then save to the input directory.
+
+**Note:** Ongoing functionality is being added including efforts for reproducability by desigining a parameters structure fed into all algorithms. This includes optionality to plot results as they are processed similar to the manuscript plots for each subject, these images will save to respective directories. 
+
+**Note:** There is also support for BIDS formatted datasets provided subject data is stored BIDS_dir\derivatives\QVT\sub-001, sub-002 etc. Inputing just BIDS_dir, the entire directory can be run.
 
 ### Acknowledging ### 
 Standing on the shoulders of giants, this module would not be possible without the original creators work. Please properly cite and acknowledge the following publications:
@@ -37,6 +53,6 @@ And our own
 - (Fill when accepted)
 
 ### Contact ### 
-Please contact Sergio Dempsey if you have a dataset that is not loading correctly and that functionality will be added within a reasonable timeframe.
+Please contact Sergio Dempsey for feature requests or if you have a dataset that is not loading correctly and that functionality will be added within a reasonable timeframe.
 
 **Sergio Dempsey**: sdem348@aucklanduni.ac.nz
