@@ -23,7 +23,7 @@ function [PI_scat] = enc_PITC_process(data_struct,Labels,path2data,params,SDist)
         startroots = {ICA_l,ICA_r,BA};
         if isempty(SDist)
             ds = DataStorage();  
-            my_app_handle=PITCinteractive(data_struct, startroots, LR, Exclude,ds);
+            my_app_handle=PITCinteractive2(data_struct, startroots, LR, Exclude,ds);
             uiwait(my_app_handle.UIFigure);
             SearchDist=ds.dataArea.SearchDist;
             PI_scat=ds.dataArea.PI_scat;

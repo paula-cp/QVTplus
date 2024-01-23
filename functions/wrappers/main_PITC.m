@@ -2,9 +2,10 @@ clear;clc;
 path2bids='C:\Users\sdem348\Desktop';
 params=init_params(path2bids);
 params.PltFlag=1;
-params.SaveData=1;
+params.SaveData=0;
+params.rerun=1;
 Results=struct;
-for i=1:20
+for i=1:1
     subject=strcat('sub-',num2str(i,'%03.0f'));
     params.subject=subject;
     %% wrap below
