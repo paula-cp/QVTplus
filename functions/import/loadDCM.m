@@ -13,39 +13,42 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
 % Used by: autoCollectFlow.m, and any separate functions to compute any
 % saved data (PITC codes, Damping codes etc)
 %
+% Notes: The DICOM data may be rotated 180 (reverse flows), this may be
+% allieviated by rotating the matrices using something like 
+% %MAG=imrotate(MAG(:,:,:),rotImAngle);
+% This should be done for all loaded matrices, HOWEVER, this was only
+% required on Siemens data for some reason and may not always be needed.
+%
 % Dependencies: ShuffleDCM.m and all QVT processing codes
 %% Initialization
 clc
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
-res='1.4';%'0.5'; %Only needed if you have multiple resolutions in your patient folder 
-% AND the resolution is named in the file folder as "0.5" or 05. Put in
-% with a dot here.
-Vendor='GE'; %Can also put GE
+res='05';%'0.5''1.4'; %Only needed if you have multiple resolutions in your patient folder 
+% AND the resolution is named in the file folder; put in the resolution.
+Vendor='GE'; %Under construction, just leave as is, this can be developed as people share case data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Or do
 addpath(pwd)
-
 set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
-cd(directory)
 %directory
+%Returns the folder files names for each x,y,z, and mag. Can also input
+%manually.
 [Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
-%whos APpath
-%%
-%Load each velocity and put into phase matrix
-[VAP,~] = shuffleDCM(APpath,directory,0);
+%Load each velocity (raw phase) and put into phase matrix
+[VAP,~] = shuffleDCM(APpath,0);
 [a,c,b,d]=size(VAP);
 v=zeros([a,c,b,3,d],'single');
 v(:,:,:,1,:)=squeeze(VAP(:,:,:,:));
 clear VAP
 set(handles.TextUpdate,'String','Loading .DCM Data 20%'); drawnow;
-[VLR,~] = shuffleDCM(LRpath,directory,0);
+[VLR,~] = shuffleDCM(LRpath,0);
 v(:,:,:,2,:)=squeeze(VLR(:,:,:,:));
 clear VLR
 set(handles.TextUpdate,'String','Loading .DCM Data 40%'); drawnow;
-[VSI,~] = shuffleDCM(SIpath,directory,0);
+[VSI,~] = shuffleDCM(SIpath,0);
 v(:,:,:,3,:)=squeeze(VSI(:,:,:,:));
 clear VSI
 set(handles.TextUpdate,'String','Loading .DCM Data 60%'); drawnow;
@@ -57,15 +60,14 @@ clear maxx minn
 set(handles.TextUpdate,'String','Loading .DCM Data 80%'); drawnow;
 
 %Load MAGnitude image
-[MAG,dcminfo] = shuffleDCM(Anatpath,directory,0);
+[MAG,dcminfo] = shuffleDCM(Anatpath,0);
 MAG = mean(MAG,4);
-%MAG=imrotate(MAG(:,:,:),rotImAngle);
 set(handles.TextUpdate,'String','Loading .DCM Data 100%'); drawnow;
 
 filetype = 'dcm';
 nframes = dcminfo.CardiacNumberOfImages; %number of reconstructed frames
 timeres = dcminfo.NominalInterval/nframes; %temporal resolution (ms)
-res = dcminfo.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC)
+res = dcminfo.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
 if strcmp('GE',Vendor)
     slicespace=dcminfo.SpacingBetweenSlices;
 elseif strcmp('Siemens',Vendor)
@@ -78,7 +80,6 @@ VoxDims=[res res slicespace];
 %% Import Complex Difference
 set(handles.TextUpdate,'String','Loading Complex Difference Data'); drawnow;
 timeMIP = calc_angio(MAG, vMean, VENC);
-
 %% Manual Background Phase Correction (if necessary)
 back = zeros(size(vMean),'single');
 if ~BGPCdone
@@ -99,7 +100,6 @@ if ~BGPCdone
     end 
     clear X Y Z poly_fitx poly_fity poly_fitz xrange yrange zrange
 end
-
 %% Find optimum global threshold for total branch segmentation
 set(handles.TextUpdate,'String','Segmenting and creating Tree'); drawnow;
 step = 0.001; %step size for sliding threshold
