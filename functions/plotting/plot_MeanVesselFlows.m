@@ -17,8 +17,8 @@ function [] = plot_MeanVesselFlows(time,Flow,FlowErr)
         ylabel('Flow (mL/s)','FontSize',8,'FontWeight','Bold')
         title(TitleNames{order(ves)},'FontSize',10,'FontWeight','Bold')
         ylim([(minY-0.1.*maxY) (maxY+0.1.*maxY)])
-        box on
-        grid on
+        box off
+        grid off
         yticks(0:9)
         xticks(0:0.15:1.5)
     end

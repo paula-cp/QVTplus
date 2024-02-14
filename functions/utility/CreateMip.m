@@ -1,4 +1,4 @@
-Path2Mip='C:\Users\sdem348\Desktop\Shuaihu\3D TOF FS HyperSense';
+Path2TOF='C:\Users\sdem348\Desktop\3D TOF FS HyperSense_3';
 DIR=dir(Path2Mip);
 filename=DIR(3).name;
 slice = dicomread(fullfile(Path2Mip,filename));

@@ -21,4 +21,11 @@ function [time,Flow,FlowErr]=enc_HQVesselFlows(data_struct,Labels,params)
         Flow(:,ves)=mean(HQFlows)';
         FlowErr(:,ves)=std(HQFlows)';
     end
+    if params.PltFlag==1
+        plot_MeanVesselFlows(time,Flow,FlowErr)
+        if params.SaveData==1
+            saveas(gcf,fullfile(params.data_dir,'Flow_plot.jpg'))
+            close
+        end
+    end
 end

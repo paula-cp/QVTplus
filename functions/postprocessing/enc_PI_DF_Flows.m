@@ -1,6 +1,6 @@
 function [DF,PI,Flows,FlowErr] = enc_PI_DF_Flows(PI_scat,data_struct,Labels,path2data,params)
     % Load Necessities from labels and processed data
-    load(fullfile(path2data,'RawDamping.mat'));
+    load(fullfile(path2data,'RawPITC.mat'));
     %%
     BranchList=data_struct.branchList;
     BranchList=[BranchList [1:length(BranchList)]'];

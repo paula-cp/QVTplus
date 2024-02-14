@@ -1,5 +1,7 @@
-clc
-clear
+clc;clear;
+%This function will rename exported DICOM folders by their scan name in the
+%DICOM metadata. Good for visualising during folder exploration, but
+%unecessary to any processing. 
 path2data='C:\Users\sdem348\Desktop\Shaihu';
 DIR=dir(path2data);
 EXP='s\d*';
@@ -14,8 +16,8 @@ for i=8:length(DIR)
             Name=INFO.SeriesDescription;
             Name = erase(Name,":");
                 try
-                movefile(path2dcms,fullfile(path2data,Name))
-                catch
+                    movefile(path2dcms,fullfile(path2data,Name))
+                    catch
                 end
         catch
         end
