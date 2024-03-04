@@ -5,7 +5,7 @@
 %Note: The organisation is based on alphabetical file order. If you want to
 %reorganise another way, add functionality.
 %% Initialization
-path2bids='';
+path2bids='C:\Users\sdem348\Desktop\Dempsey2023MultiRes_Cohort';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% Don't change below %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Or do
@@ -23,5 +23,10 @@ for i=3:length(DIR(:))
     Demos(i-2,3)={INFO.PatientSex};
     Demos(i-2,4)={INFO.PatientWeight};
     Demos(i-2,5)={INFO.HeartRate};
+    Demos(i-2,6)={INFO.HeartRate};
+    Demos(i-2,7)={INFO.HeartRate};
+    Demos(i-2,8)={INFO.HeartRate};
+    Demos(i-2,9)={INFO.HeartRate};
+    Demos(i-2,10)={INFO.HeartRate};
 end
 save(fullfile(path2bids,'derivatives','QVT','population','Demographics.mat'),'Demos')

@@ -5,4 +5,5 @@ function [rho]=slidingxCor(csaFlowINT,defCurve)
         newCurve=[newCurve(2:end) newCurve(1)];
         rho(i,1) = corr(newCurve',defCurve');
     end
+
 end
