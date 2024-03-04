@@ -11,20 +11,23 @@ function [time,Flow,FlowErr]=enc_HQVesselFlows(data_struct,Labels,params)
     for ves=1:9
         Vessel=Labels{ves,2};Vessel=str2num(Vessel);
         Data=[];
-        for vessnum=1:length(Vessel)
-            [idx1,~]=find(BranchList(:,4)==Vessel(vessnum));
-            Temp=BranchList(idx1,:);
-            [idx2,~]=find(Temp(:,7)>=params.thresh);
-            Data=[Data;Temp(idx2,:)];
+        if ~isempty(Vessel) %In case standard vessel doesn't exist (ACAs from 1 ICA)
+            for vessnum=1:length(Vessel)
+                [idx1,~]=find(BranchList(:,4)==Vessel(vessnum));
+                Temp=BranchList(idx1,:);
+                [idx2,~]=find(Temp(:,7)>=params.thresh);
+                Data=[Data;Temp(idx2,:)];
+            end
+            HQFlows=Flows(Data(:,6),:);
+            Flow(:,ves)=mean(HQFlows)';
+            FlowErr(:,ves)=std(HQFlows)';
         end
-        HQFlows=Flows(Data(:,6),:);
-        Flow(:,ves)=mean(HQFlows)';
-        FlowErr(:,ves)=std(HQFlows)';
     end
     if params.PltFlag==1
         plot_MeanVesselFlows(time,Flow,FlowErr)
         if params.SaveData==1
-            saveas(gcf,fullfile(params.data_dir,'Flow_plot.jpg'))
+            path2data=string(fullfile(params.data_dir,'derivatives\QVT',params.subject));
+            saveas(gcf,fullfile(path2data,'Flow_plot.jpg'))
             close
         end
     end
