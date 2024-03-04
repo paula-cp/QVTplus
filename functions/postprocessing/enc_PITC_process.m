@@ -47,20 +47,14 @@ function [PI_scat] = enc_PITC_process(data_struct,Labels,path2data,params,SDist)
             BranchList=[BranchList [1:length(BranchList)]'];
             PI=data_struct.PI_val;
             Quality=data_struct.StdvFromMean;
-            MaxVel=data_struct.PIvel_val;
+            Area=data_struct.area_val;
             VoxDims=data_struct.VoxDims;
             % Apply the voxel dimensions to the matrix location of the branch lists
             BranchList(:,1)=VoxDims(1).*BranchList(:,1);
             BranchList(:,2)=VoxDims(2).*BranchList(:,2);
             BranchList(:,3)=VoxDims(3).*BranchList(:,3);
-            % Process Velocity Based Pulsatility (default output is flow based)
-            PIvel_val=zeros([length(MaxVel(:,1)) 1]);
-            for i=1:length(MaxVel(:,1))
-                PIvel_val(i)=(max(MaxVel(i,:))-min(MaxVel(i,:)))./(mean(MaxVel(i,:)));
-            end
             % Compute Lengths Below
-            [PI_scat,~,G] = compute_length(Mats,BranchList,PI,PIvel_val,Quality);
-
+            [PI_scat,G,~] = compute_length(Mats,BranchList,PI,Area,Quality);
             SearchDist=SDist;
             if params.SaveData==1
                 save(fullfile(path2data,'RawPITC.mat'),'PI_scat','G','Mats','SearchDist');

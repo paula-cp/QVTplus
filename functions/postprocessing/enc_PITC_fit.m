@@ -23,16 +23,21 @@ function [PITC,globalPI] = enc_PITC_fit(PI_scat,path2data,params)
         Vals=ResCell{i};
         posx=Vals(:,1);
         posy=Vals(:,2);
-        W=(Vals(:,4)-thresh)./(4-thresh);
-        meanPI=sum(W.*Vals(:,2))./sum(W);
-        STORE=[STORE;W Vals(:,2)];
-        PIs(1,i)=sum(W.*Vals(:,2))./sum(W);
-        f=fit(posx,posy,'poly1','Weights',W);
-        ci = confint(f,0.68);
-        C = coeffvalues(f); % Get the coefficient values
-        yCalc=f(posx);
-        Rsq1 = 1 - sum((posy - yCalc).^2)/sum((posy - mean(posy)).^2);
-        ResSlope(i)={[C(1) C(2) Rsq1 ci(1,1) ci(2,1) meanPI]};
+        if ~isempty(posx)
+            W=(Vals(:,4)-thresh)./(4-thresh);
+            meanPI=sum(W.*Vals(:,2))./sum(W);
+            STORE=[STORE;W Vals(:,2)];
+            PIs(1,i)=sum(W.*Vals(:,2))./sum(W);
+            f=fit(posx,posy,'poly1','Weights',W);
+            ci = confint(f,0.68);
+            C = coeffvalues(f); % Get the coefficient values
+            yCalc=f(posx);
+            Rsq1 = 1 - sum((posy - yCalc).^2)/sum((posy - mean(posy)).^2);
+            ResSlope(i)={[C(1) C(2) Rsq1 ci(1,1) ci(2,1) meanPI]};
+        else
+            PIs(1,i)=nan;
+            ResSlope(i)={[nan nan nan nan nan nan]};
+        end
     end
     globalPI=sum(STORE(:,1).*STORE(:,2))./sum(STORE(:,1));
     %===========================================
@@ -50,8 +55,10 @@ function [PITC,globalPI] = enc_PITC_fit(PI_scat,path2data,params)
                 end
                 if length(EPI(:,1))==2
                     EndPIPlot(i,:)=mean(EPI);
-                else
+                elseif length(EPI(:,1))==1
                     EndPIPlot(i,:)=EPI;
+                else
+                    EndPIPlot(i,:)=nan;
                 end
             end
             DF(1:3,3)=[EndPIPlot(1,1);EndPIPlot(2,1);EndPIPlot(3,1)];
