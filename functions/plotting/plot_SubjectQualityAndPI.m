@@ -31,8 +31,10 @@ function [] = plot_SubjectQualityAndPI(ResCell,ExCell,thresh,ResSlope,PIs,vararg
             scatter(Vals(:,1),Vals(:,2),MrkrSz,'MarkerFaceColor','b','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0)
             hold on
             Slopes=ResSlope{i-3};
-            ypos=Slopes(1).*[0 maxX]+Slopes(2);
-            plot([0 maxX],ypos,'k-')
+            if ~isempty(Slopes)
+                ypos=Slopes(1).*[0 maxX]+Slopes(2);
+                plot([0 maxX],ypos,'k-')
+            end
             plot([0 maxX],[PIs(i-3) PIs(i-3)],'r-')
             if i==4
             lgnd=legend('Data','p_{tf}(d)=p_{tc}d+\beta','\mu(p_{pi})');
