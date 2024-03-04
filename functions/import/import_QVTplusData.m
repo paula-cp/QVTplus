@@ -1,4 +1,4 @@
-function [data_struct,Labels] = import_QVTplusData(path2data)
+function [data_struct,Labels,v] = import_QVTplusData(path2data)
     DataName = dir(fullfile(path2data,'*.mat'));
     for i=1:length(DataName)
         if length(DataName(i).name)>=7
@@ -11,4 +11,5 @@ function [data_struct,Labels] = import_QVTplusData(path2data)
     load(fullfile(path2data,DataName(LOC).name));
     clear LOC DataName
     Labels=readLabels(path2data);
+    v=Vel_Time_Res;
 end
