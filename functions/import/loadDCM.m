@@ -23,11 +23,23 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
 %% Initialization
 clc
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
-VENC = 800; %may change depending on participant
+%VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 res='05';%'0.5''1.4'; %Only needed if you have multiple resolutions in your patient folder 
 % AND the resolution is named in the file folder; put in the resolution.
 Vendor='GE'; %Under construction, just leave as is, this can be developed as people share case data
+
+%Age=str2num(INFO.PatientAge(2:3));
+%Sex={INFO.PatientSex};
+%Weight=INFO.PatientWeight;
+%RepT=INFO.RepetitionTime;
+%EchoT=INFO.EchoTime;
+%Bandwidth=INFO.PixelBandwidth;
+%ImFreq=INFO.ImagingFrequency;
+%FlipA=INFO.FlipAngle;
+%HR=INFO.HeartRate;
+%VENC=INFO.Private_0019_10cc; %For GE only?
+%Scale=INFO.Private_0019_10e2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Or do
@@ -38,11 +50,14 @@ set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
 %manually.
 [Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
 %Load each velocity (raw phase) and put into phase matrix
-[VAP,~] = shuffleDCM(APpath,0);
+[VAP,INFO] = shuffleDCM(APpath,0);
 [a,c,b,d]=size(VAP);
 v=zeros([a,c,b,3,d],'single');
 v(:,:,:,1,:)=squeeze(VAP(:,:,:,:));
 clear VAP
+VENC=single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
+Scale=INFO.Private_0019_10e2;
+
 set(handles.TextUpdate,'String','Loading .DCM Data 20%'); drawnow;
 [VLR,~] = shuffleDCM(LRpath,0);
 v(:,:,:,2,:)=squeeze(VLR(:,:,:,:));
@@ -60,21 +75,21 @@ clear maxx minn
 set(handles.TextUpdate,'String','Loading .DCM Data 80%'); drawnow;
 
 %Load MAGnitude image
-[MAG,dcminfo] = shuffleDCM(Anatpath,0);
+[MAG,~] = shuffleDCM(Anatpath,0);
 MAG = mean(MAG,4);
 set(handles.TextUpdate,'String','Loading .DCM Data 100%'); drawnow;
 
 filetype = 'dcm';
-nframes = dcminfo.CardiacNumberOfImages; %number of reconstructed frames
-timeres = dcminfo.NominalInterval/nframes; %temporal resolution (ms)
-res = dcminfo.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
+nframes = INFO.CardiacNumberOfImages; %number of reconstructed frames
+timeres = INFO.NominalInterval/nframes; %temporal resolution (ms)
+res = INFO.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
 if strcmp('GE',Vendor)
-    slicespace=dcminfo.SpacingBetweenSlices;
+    slicespace=INFO.SpacingBetweenSlices;
 elseif strcmp('Siemens',Vendor)
-    slicespace=dcminfo.SliceThickness;
+    slicespace=INFO.SliceThickness;
 end
-matrix(1) = dcminfo.Rows; %number of pixels in rows
-matrix(2) = dcminfo.Columns;
+matrix(1) = INFO.Rows; %number of pixels in rows
+matrix(2) = INFO.Columns;
 matrix(3) = length(MAG(1,1,:)); %number of slices
 VoxDims=[res res slicespace];
 %% Import Complex Difference
@@ -116,7 +131,7 @@ imageData.MAG = MAG;
 imageData.CD = timeMIP; 
 imageData.V = vMean;
 imageData.Segmented = segment;
-imageData.Header = dcminfo;
+imageData.Header = INFO;
 
 %% Feature Extraction
 % Get trim and create the centerline data
