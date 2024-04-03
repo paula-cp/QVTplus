@@ -27,7 +27,7 @@ BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 res='05';%'0.5''1.4'; %Only needed if you have multiple resolutions in your patient folder 
 % AND the resolution is named in the file folder; put in the resolution.
-Vendor='GE'; %Under construction, just leave as is, this can be developed as people share case data
+Vendor='Siemens'; %Under construction, just leave as is, this can be developed as people share case data
 
 %Age=str2num(INFO.PatientAge(2:3));
 %Sex={INFO.PatientSex};
@@ -55,8 +55,8 @@ set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
 v=zeros([a,c,b,3,d],'single');
 v(:,:,:,1,:)=squeeze(VAP(:,:,:,:));
 clear VAP
-VENC=single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
-Scale=INFO.Private_0019_10e2;
+VENC=700;%single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
+%Scale=INFO.Private_0019_10e2;
 
 set(handles.TextUpdate,'String','Loading .DCM Data 20%'); drawnow;
 [VLR,~] = shuffleDCM(LRpath,0);
@@ -80,8 +80,8 @@ MAG = mean(MAG,4);
 set(handles.TextUpdate,'String','Loading .DCM Data 100%'); drawnow;
 
 filetype = 'dcm';
-nframes = INFO.CardiacNumberOfImages; %number of reconstructed frames
-timeres = INFO.NominalInterval/nframes; %temporal resolution (ms)
+nframes = 15;%INFO.CardiacNumberOfImages; %number of reconstructed frames
+timeres = 60/(60*nframes);%INFO.NominalInterval/nframes; %temporal resolution (ms)
 res = INFO.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
 if strcmp('GE',Vendor)
     slicespace=INFO.SpacingBetweenSlices;

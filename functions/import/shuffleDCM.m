@@ -17,6 +17,7 @@ DIR=dir(path);
 % will naturally become more robust. 
 Exp={'i\d*.MRDC.(\d*)$';
     '.*-(\d*).dcm$';
+    'IMG.(\d*_\d*)';
     '.*i(\d*)$';};
 expID=0;
 flag=0;
@@ -53,7 +54,7 @@ filename=SortedDir{1};
 slice = dicomread(fullfile(path,filename));
 [a,b]=size(slice);
 dcminfo = dicominfo(fullfile(path,filename));
-numphase=dcminfo.CardiacNumberOfImages;
+numphase=15;%dcminfo.CardiacNumberOfImages;
 slices=length(SortedDir)/numphase;
 V=zeros([a,b,slices,numphase],'single');
 if flip==0
@@ -61,19 +62,31 @@ if flip==0
 else
     pos=slices+1;
 end
+
+numphase = 1;
 for i=1:length(SortedDir)
     filename=SortedDir{i};
     slice = dicomread(fullfile(path,filename));
-    phase=rem(i,numphase);
-    if phase == 0
+    phase = rem(i,(numphase*101)+1);
+
+    if phase ~=0
+        pos = pos+1;
         phase = numphase;
     end
-    if phase ==1
-        if flip==0
-            pos = pos+1;
-        else
-            pos = pos-1;
-        end
+
+    if phase == 0
+        pos = 1;
+        numphase = numphase + 1;
+        phase = numphase;
     end
-    V(:,:,pos,phase)=slice(:,:);
+    [~,name]=fileparts(path);
+    if name == 'P3'
+        V(:,:,pos,phase)=slice(:,:);
+    elseif name == 'P2'
+        V(:,:,pos,phase)=slice(:,:);
+    else
+        V(:,:,pos,phase)=slice(:,:);
+    end
+    %V(:,:,pos,phase)=slice(:,:);
+    dicti{pos,phase}=filename;
 end

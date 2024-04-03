@@ -5,7 +5,7 @@
 % This function is designed to run assuming you store your data in BIDS 
 % format. If not, modify to run a folder or what not, BIDS is much easier
 clear;clc;
-path2bids='C:\Users\sdem348\Desktop\Dempsey2023MultiRes_Cohort';
+path2bids='C:\Users\u149879\Desktop\trial\dicom2';
 params=init_params(path2bids);
 params.SaveData=1;%Save Interim Data
 params.PltFlag=1; %Make plots
@@ -14,7 +14,7 @@ for i=1:1
     subject=strcat('sub-',num2str(i,'%03.0f'));
     params.subject=subject;
     fprintf(strcat('Now Processing Case:',num2str(i),'\n'))
-    path2data=string(fullfile(params.data_dir,'derivatives\QVT',subject));
+    path2data=path2bids;%string(fullfile(params.data_dir,'derivatives\QVT',subject));
     if exist(path2data,'dir')==7
         [data_struct,Labels,~]=import_QVTplusData(path2data);
         [PI_scat]=enc_PITC_process(data_struct,Labels,path2data,params,[]);

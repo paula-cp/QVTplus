@@ -26,7 +26,10 @@ function [time,Flow,FlowErr]=enc_HQVesselFlows(data_struct,Labels,params)
     if params.PltFlag==1
         plot_MeanVesselFlows(time,Flow,FlowErr)
         if params.SaveData==1
-            path2data=string(fullfile(params.data_dir,'derivatives\QVT',params.subject));
+            path2data=string(fullfile(params.data_dir,params.subject));
+            if ~exist(path2data, 'dir')
+                mkdir(path2data)
+            end
             saveas(gcf,fullfile(path2data,'Flow_plot.jpg'))
             close
         end
