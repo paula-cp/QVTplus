@@ -27,7 +27,7 @@ BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 res='05';%'0.5''1.4'; %Only needed if you have multiple resolutions in your patient folder 
 % AND the resolution is named in the file folder; put in the resolution.
-Vendor='Siemens'; %Under construction, just leave as is, this can be developed as people share case data
+Vendor='Philips'; %Under construction, just leave as is, this can be developed as people share case data
 
 %Age=str2num(INFO.PatientAge(2:3));
 %Sex={INFO.PatientSex};
@@ -50,32 +50,37 @@ set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
 %manually.
 [Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
 %Load each velocity (raw phase) and put into phase matrix
-[VAP,INFO] = shuffleDCM(APpath,0);
+[VAP,INFO] = shuffleDCM(APpath,0,0);
 [a,c,b,d]=size(VAP);
 v=zeros([a,c,b,3,d],'single');
-v(:,:,:,1,:)=squeeze(VAP(:,:,:,:));
+v(:,:,:,2,:)=-squeeze(VAP(:,:,:,:))+4096;
 clear VAP
-VENC=700;%single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
+VENC=700; %is 70 cm/s, so 700 mm/s
+%single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
 %Scale=INFO.Private_0019_10e2;
 
 set(handles.TextUpdate,'String','Loading .DCM Data 20%'); drawnow;
-[VLR,~] = shuffleDCM(LRpath,0);
-v(:,:,:,2,:)=squeeze(VLR(:,:,:,:));
+[VLR,~] = shuffleDCM(LRpath,0,0);
+v(:,:,:,1,:)=-squeeze(VLR(:,:,:,:))+4096;
 clear VLR
 set(handles.TextUpdate,'String','Loading .DCM Data 40%'); drawnow;
-[VSI,~] = shuffleDCM(SIpath,0);
+[VSI,~] = shuffleDCM(SIpath,0,0);
 v(:,:,:,3,:)=squeeze(VSI(:,:,:,:));
 clear VSI
 set(handles.TextUpdate,'String','Loading .DCM Data 60%'); drawnow;
 
 % Convert to velocity
-v = (2 * (v-(-VENC))/(VENC-(-VENC)) - 1) * VENC; %range values to VENCs
+if strcmp('Philips',Vendor)
+    v = (v - 2048.) / 2048. * VENC;
+else
+    v = (2 * (v-(-VENC))/(VENC-(-VENC)) - 1) * VENC; %range values to VENCs
+end
 vMean = mean(v,5);
 clear maxx minn
 set(handles.TextUpdate,'String','Loading .DCM Data 80%'); drawnow;
 
 %Load MAGnitude image
-[MAG,~] = shuffleDCM(Anatpath,0);
+[MAG,~] = shuffleDCM(Anatpath,0,1);
 MAG = mean(MAG,4);
 set(handles.TextUpdate,'String','Loading .DCM Data 100%'); drawnow;
 
@@ -86,6 +91,8 @@ res = INFO.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
 if strcmp('GE',Vendor)
     slicespace=INFO.SpacingBetweenSlices;
 elseif strcmp('Siemens',Vendor)
+    slicespace=INFO.SliceThickness;
+elseif strcmp('Philips',Vendor)
     slicespace=INFO.SliceThickness;
 end
 matrix(1) = INFO.Rows; %number of pixels in rows
@@ -122,10 +129,16 @@ UPthresh = 0.8; %max upper threshold when creating Sval curvature plot
 SMf = 10;
 shiftHM_flag = 1; %flag to shift max curvature by FWHM
 medFilt_flag = 1; %flag for median filtering of CD image
-[~,segment] = slidingThreshold(timeMIP,step,UPthresh,SMf,shiftHM_flag,medFilt_flag);
-areaThresh = round(sum(segment(:)).*0.005); %minimum area to keep
-conn = 6; %connectivity (i.e. 6-pt)
-segment = bwareaopen(segment,areaThresh,conn); %inverse fill holes
+own_seg = 1;
+if own_seg == 0
+    [~,segment] = slidingThreshold(timeMIP,step,UPthresh,SMf,shiftHM_flag,medFilt_flag);
+    areaThresh = round(sum(segment(:)).*0.005); %minimum area to keep
+    conn = 6; %connectivity (i.e. 6-pt)
+    segment = bwareaopen(segment,areaThresh,conn); %inverse fill holes
+else
+    NII = spm_vol('eICAB_seg_realign.nii');
+    segment = spm_read_vols(NII);
+end
 % save raw (cropped) images to imageData structure (for Visual Tool)
 imageData.MAG = MAG;
 imageData.CD = timeMIP; 

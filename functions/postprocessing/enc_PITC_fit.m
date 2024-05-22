@@ -71,7 +71,7 @@ function [PITC,globalPI] = enc_PITC_fit(PI_scat,path2data,params)
     PITC=[ResSlope{1}' ResSlope{2}' ResSlope{3}'];
     if params.SaveData==1
         if params.PltFlag==1
-            saveas(gcf,fullfile(path2data,'PITC_plot.jpg'))
+            saveas(gcf,fullfile(path2data,params.subject,'PITC_plot.jpg'))
             close
         end
         save(fullfile(path2data,'PITCprocessed.mat'),'PITC')

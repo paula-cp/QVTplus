@@ -19,7 +19,7 @@ function [] = plot_MeanVesselFlows(time,Flow,FlowErr)
         ylim([(minY-0.1.*maxY) (maxY+0.1.*maxY)])
         box off
         grid off
-        yticks(0:9)
+        yticks(0:0.1:1)
         xticks(0:0.15:1.5)
     end
 end

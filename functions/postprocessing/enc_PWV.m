@@ -40,7 +40,7 @@ function [PWV,R]=enc_PWV(data_struct,PI_scat,time,Labels,params)
         end
         if params.PltFlag==1
             if params.SaveData==1
-                path2data=string(fullfile(params.data_dir,'derivatives\QVT',params.subject));
+                path2data=string(fullfile(params.data_dir,params.subject));
                 saveas(gcf,fullfile(path2data,'PWV_bw.jpg'))
                 close(gcf)
             end    
@@ -85,7 +85,7 @@ function [PWV,R]=enc_PWV(data_struct,PI_scat,time,Labels,params)
         end
         if params.PltFlag==1
             if params.SaveData==1
-                path2data=string(fullfile(params.data_dir,'derivatives\QVT',params.subject));
+                path2data=string(fullfile(params.data_dir,params.subject));
                 saveas(gcf,fullfile(path2data,'PWV_dw.jpg'))
                 close(gcf)
             end    

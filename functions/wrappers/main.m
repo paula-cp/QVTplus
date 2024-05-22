@@ -9,12 +9,17 @@ path2bids='C:\Users\u149879\Desktop\trial\dicom2';
 params=init_params(path2bids);
 params.SaveData=1;%Save Interim Data
 params.PltFlag=1; %Make plots
+params.rerun=1; %esto es solo por si queremos hacer el linkage analysis por cada caso
 Results=struct;
-for i=1:1
+for i=1:2
     subject=strcat('sub-',num2str(i,'%03.0f'));
     params.subject=subject;
+    path2data=path2bids;
     fprintf(strcat('Now Processing Case:',num2str(i),'\n'))
-    path2data=path2bids;%string(fullfile(params.data_dir,'derivatives\QVT',subject));
+    if ~exist(string(fullfile(path2data,subject)), 'dir')
+        mkdir(string(fullfile(path2data,subject)))
+    end
+    %string(fullfile(params.data_dir,'derivatives\QVT',subject));
     if exist(path2data,'dir')==7
         [data_struct,Labels,~]=import_QVTplusData(path2data);
         [PI_scat]=enc_PITC_process(data_struct,Labels,path2data,params,[]);
@@ -33,7 +38,10 @@ for i=1:1
     else
     end
 end
-save(fullfile(params.data_dir,'derivatives\QVT\population\ResultsMR.mat'),"Results")
+if ~exist(string(fullfile(path2data,'population')), 'dir')
+        mkdir(string(fullfile(path2data,'population')))
+end
+save(fullfile(params.data_dir,'population\ResultsMR.mat'),"Results")
 
 % %% Running 
 % %==================================================
