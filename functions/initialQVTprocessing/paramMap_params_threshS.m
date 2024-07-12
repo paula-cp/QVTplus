@@ -122,7 +122,7 @@ for j = 1:nframes
             vy = vy - back(:,:,:,2);
             vz = vz - back(:,:,:,3);
         end
-    elseif strcmp(filetype,'dcm')
+    elseif strcmp(filetype,'dcm') || strcmp(filetype,'nii')
         set(handles.TextUpdate,'String',['Calculating Quantitative Params Frame: ' num2str(j) '/' num2str(nframes)]);drawnow;
         vx = squeeze(v(:,:,:,1,j));
         vy = squeeze(v(:,:,:,2,j));
