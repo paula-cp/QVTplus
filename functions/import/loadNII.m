@@ -29,20 +29,20 @@ autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not
 filetype = 'nii';
 set(handles.TextUpdate,'String','Loading .NII Data'); drawnow;
 
-json_mag = fileread(fullfile(directory,'BMRI198894_4DQflowNeuro_AP_1803.json'));
+json_mag = fileread(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803.json'));
 json_mag = jsondecode(json_mag); 
 
-magvol = spm_vol(fullfile(directory,'BMRI198894_4DQflowNeuro_AP_1803.nii.gz'));
-mag = spm_read_vols(magvol);
+magvol = spm_vol(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803.nii.gz'));
+mag = flip(spm_read_vols(magvol),3);
 
-vxvol = spm_vol(fullfile(directory,'BMRI198894_4DQflowNeuro_AP_1803_ph.nii.gz'));
-vx = spm_read_vols(vxvol);
+vxvol = spm_vol(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803_ph.nii.gz'));
+vx = flip(spm_read_vols(vxvol),3);
 
-vyvol = spm_vol(fullfile(directory,'BMRI198894_4DQflowNeuro_RL_1805_ph.nii.gz'));
-vy = spm_read_vols(vyvol);
+vyvol = spm_vol(fullfile(directory,'scans','1805_4DQflowNeuro RL','NIFTI','BMRI198894_4DQflowNeuro_RL_1805_ph.nii.gz'));
+vy = flip(spm_read_vols(vyvol),3);
 
-vzvol = spm_vol(fullfile(directory,'BMRI198894_4DQflowNeuro_FH_1804_ph.nii.gz'));
-vz = spm_read_vols(vzvol);
+vzvol = spm_vol(fullfile(directory,'scans','1804_4DQflowNeuro FH','NIFTI','BMRI198894_4DQflowNeuro_FH_1804_ph.nii.gz'));
+vz = flip(spm_read_vols(vzvol),3);
 
 [a,c,b,d] = size(vx);
 v = zeros([a,c,b,3,d],'single');
@@ -53,7 +53,7 @@ vy = vy.*10;
 vz = vz.*10;
 
 v(:,:,:,1,:)=squeeze(vx(:,:,:,:));
-v(:,:,:,2,:)=squeeze(vy(:,:,:,:));
+v(:,:,:,2,:)=-squeeze(vy(:,:,:,:));
 v(:,:,:,3,:)=squeeze(vz(:,:,:,:));
 
 set(handles.TextUpdate,'String','Loaded NIfTI data'); drawnow;
