@@ -29,32 +29,46 @@ autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not
 filetype = 'nii';
 set(handles.TextUpdate,'String','Loading .NII Data'); drawnow;
 
-json_mag = fileread(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803.json'));
+folders = dir(fullfile(directory,'scans'));
+folders(ismember({folders.name}, {'.', '..'})) = [];
+folders = {folders([folders.isdir]).name};
+
+folderAP = folders(~cellfun('isempty', regexp(folders, 'AP')));
+folderAP = folderAP{1};
+folderRL = folders(~cellfun('isempty', regexp(folders, 'RL')));
+folderRL = folderRL{1};
+folderFH = folders(~cellfun('isempty', regexp(folders, 'FH')));
+folderFH = folderFH{1};
+
+
+json_mag = dir(fullfile(directory,'scans', folderAP,'NIFTI','*.json'));
+json_mag = fileread(fullfile(json_mag(1).folder,json_mag(1).name));
 json_mag = jsondecode(json_mag); 
 
-magvol = spm_vol(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803.nii.gz'));
+magvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*.nii.gz'));
+magvol = spm_vol(fullfile(magvol(1).folder,magvol(1).name));
 mag = flip(spm_read_vols(magvol),3);
 
-vxvol = spm_vol(fullfile(directory,'scans','1803_4DQflowNeuro AP','NIFTI','BMRI198894_4DQflowNeuro_AP_1803_ph.nii.gz'));
+vxvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*_ph.nii.gz'));
+vxvol = spm_vol(fullfile(vxvol(1).folder,vxvol(1).name));
 vx = flip(spm_read_vols(vxvol),3);
 
-vyvol = spm_vol(fullfile(directory,'scans','1805_4DQflowNeuro RL','NIFTI','BMRI198894_4DQflowNeuro_RL_1805_ph.nii.gz'));
+vyvol = dir(fullfile(directory,'scans', folderRL, 'NIFTI', '*_ph.nii.gz'));
+vyvol = spm_vol(fullfile(vyvol(1).folder,vyvol(1).name));
 vy = flip(spm_read_vols(vyvol),3);
 
-vzvol = spm_vol(fullfile(directory,'scans','1804_4DQflowNeuro FH','NIFTI','BMRI198894_4DQflowNeuro_FH_1804_ph.nii.gz'));
+vzvol = dir(fullfile(directory,'scans', folderFH, 'NIFTI', '*_ph.nii.gz'));
+vzvol = spm_vol(fullfile(vzvol(1).folder,vzvol(1).name));
 vz = flip(spm_read_vols(vzvol),3);
 
 [a,c,b,d] = size(vx);
 v = zeros([a,c,b,3,d],'single');
 
 % velocities are in cm/s, convert to mm/s
-vx = vx.*10;
-vy = vy.*10;
-vz = vz.*10;
 
-v(:,:,:,1,:)=squeeze(vx(:,:,:,:));
-v(:,:,:,2,:)=-squeeze(vy(:,:,:,:));
-v(:,:,:,3,:)=squeeze(vz(:,:,:,:));
+v(:,:,:,2,:)=-squeeze(vx(:,:,:,:));
+v(:,:,:,1,:)=squeeze(vy(:,:,:,:));
+v(:,:,:,3,:)=-squeeze(vz(:,:,:,:));
 
 set(handles.TextUpdate,'String','Loaded NIfTI data'); drawnow;
 
@@ -121,6 +135,8 @@ imageData.CD = timeMIP;
 imageData.V = vMean;
 imageData.Segmented = segment;
 imageData.Header = json_mag;
+
+%save("C:\Users\u149879\Desktop\trial\original_ABI\ABI_nifti",imageData,'-mat')
 
 %% Feature Extraction
 % Get trim and create the centerline data
