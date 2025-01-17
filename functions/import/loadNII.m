@@ -66,9 +66,9 @@ v = zeros([a,c,b,3,d],'single');
 
 % velocities are in cm/s, convert to mm/s
 
-v(:,:,:,2,:)=-squeeze(vx(:,:,:,:));
-v(:,:,:,1,:)=squeeze(vy(:,:,:,:));
-v(:,:,:,3,:)=-squeeze(vz(:,:,:,:));
+v(:,:,:,2,:)=-squeeze(vx(:,:,:,:))*10;
+v(:,:,:,1,:)=squeeze(vy(:,:,:,:))*10;
+v(:,:,:,3,:)=-squeeze(vz(:,:,:,:))*10;
 
 set(handles.TextUpdate,'String','Loaded NIfTI data'); drawnow;
 
