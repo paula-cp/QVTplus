@@ -1,5 +1,5 @@
 function [cl,branchMat,branchList,branchTextList] = feature_extraction( ...
-    sortingCriteria,spurLength,vMean,segment,handles)
+    sortingCriteria,spurLength,vMean,segment)
 %FEATURE_EXTRACTION: Create vessel centerlines and label branches
 %   Used by: loadpcvipr.m
 %   Dependencies: centerlineX.m, centerline_new.m

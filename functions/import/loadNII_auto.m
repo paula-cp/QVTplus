@@ -2,13 +2,13 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
     maxVel_val,PI_val,RI_val,flowPulsatile_val,velMean_val, ...
     VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
     timeMIPcrossection,segmentFull,vTimeFrameave,MAGcrossection, imageData, ...
-    bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullEx,autoFlow,pixelSpace, VoxDims, PIvel_val] = loadDCM(directory,handles)
-% loadDCM loads dicom files and then processes them.
+    bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullEx,autoFlow,pixelSpace, VoxDims, PIvel_val] = loadNII_auto(directory)
+% loadNII loads NIFTI files and then processes them.
 %
-% It retursn to much to discuss, but it basically passes through all the
+% It returns too much to discuss, but it basically passes through all the
 % processed data to paramMap.
 %
-% Outputs: Everything
+% Outputs: Everything?
 %
 % Used by: autoCollectFlow.m, and any separate functions to compute any
 % saved data (PITC codes, Damping codes etc)
@@ -25,87 +25,71 @@ clc
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 %VENC = 800; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
-res='05';%'0.5''1.4'; %Only needed if you have multiple resolutions in your patient folder 
-% AND the resolution is named in the file folder; put in the resolution.
-Vendor='Philips'; %Under construction, just leave as is, this can be developed as people share case data
 
-%Age=str2num(INFO.PatientAge(2:3));
-%Sex={INFO.PatientSex};
-%Weight=INFO.PatientWeight;
-%RepT=INFO.RepetitionTime;
-%EchoT=INFO.EchoTime;
-%Bandwidth=INFO.PixelBandwidth;
-%ImFreq=INFO.ImagingFrequency;
-%FlipA=INFO.FlipAngle;
-%HR=INFO.HeartRate;
-%VENC=INFO.Private_0019_10cc; %For GE only?
-%Scale=INFO.Private_0019_10e2;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%% Don't change below %%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Or do
-addpath(pwd)
-set(handles.TextUpdate,'String','Loading .DCM Data'); drawnow;
-%directory
-%Returns the folder files names for each x,y,z, and mag. Can also input
-%manually.
-[Anatpath,APpath,LRpath,SIpath] = retFlowFolders(directory,Vendor,res);
-%Load each velocity (raw phase) and put into phase matrix
-[VAP,INFO] = shuffleDCM(APpath,0,0);
-[a,c,b,d]=size(VAP);
-v=zeros([a,c,b,3,d],'single');
-v(:,:,:,2,:)=-squeeze(VAP(:,:,:,:))+4096;
-clear VAP
-VENC=700; %is 70 cm/s, so 700 mm/s
-%single(INFO.Private_0019_10cc); %This is for GE scanners, maybe not others?
-%Scale=INFO.Private_0019_10e2;
+filetype = 'nii';
 
-set(handles.TextUpdate,'String','Loading .DCM Data 20%'); drawnow;
-[VLR,~] = shuffleDCM(LRpath,0,0);
-v(:,:,:,1,:)=squeeze(VLR(:,:,:,:))+4096;
-clear VLR
-set(handles.TextUpdate,'String','Loading .DCM Data 40%'); drawnow;
-[VSI,~] = shuffleDCM(SIpath,0,0);
-v(:,:,:,3,:)=-squeeze(VSI(:,:,:,:));
-clear VSI
-set(handles.TextUpdate,'String','Loading .DCM Data 60%'); drawnow;
+folders = dir(fullfile(directory,'scans'));
+folders(ismember({folders.name}, {'.', '..'})) = [];
+folders = {folders([folders.isdir]).name};
 
-% Convert to velocity
-if strcmp('Philips',Vendor)
-    v = (v - 2048.) / 2048. * VENC;
-else
-    v = (2 * (v-(-VENC))/(VENC-(-VENC)) - 1) * VENC; %range values to VENCs
-end
+folderAP = folders(~cellfun('isempty', regexp(folders, 'AP')));
+folderAP = folderAP{1};
+folderRL = folders(~cellfun('isempty', regexp(folders, 'RL')));
+folderRL = folderRL{1};
+folderFH = folders(~cellfun('isempty', regexp(folders, 'FH')));
+folderFH = folderFH{1};
+
+
+json_mag = dir(fullfile(directory,'scans', folderAP,'NIFTI','*.json'));
+json_mag = fileread(fullfile(json_mag(1).folder,json_mag(1).name));
+json_mag = jsondecode(json_mag); 
+
+magvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*.nii.gz'));
+magvol = spm_vol(fullfile(magvol(1).folder,magvol(1).name));
+mag = flip(spm_read_vols(magvol),3);
+
+vxvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*_ph.nii.gz'));
+vxvol = spm_vol(fullfile(vxvol(1).folder,vxvol(1).name));
+vx = flip(spm_read_vols(vxvol),3);
+
+vyvol = dir(fullfile(directory,'scans', folderRL, 'NIFTI', '*_ph.nii.gz'));
+vyvol = spm_vol(fullfile(vyvol(1).folder,vyvol(1).name));
+vy = flip(spm_read_vols(vyvol),3);
+
+vzvol = dir(fullfile(directory,'scans', folderFH, 'NIFTI', '*_ph.nii.gz'));
+vzvol = spm_vol(fullfile(vzvol(1).folder,vzvol(1).name));
+vz = flip(spm_read_vols(vzvol),3);
+
+[a,c,b,d] = size(vx);
+v = zeros([a,c,b,3,d],'single');
+
+% velocities are in cm/s, convert to mm/s
+
+v(:,:,:,2,:)=-squeeze(vx(:,:,:,:))*10;
+v(:,:,:,1,:)=squeeze(vy(:,:,:,:))*10;
+v(:,:,:,3,:)=-squeeze(vz(:,:,:,:))*10;
+
 vMean = mean(v,5);
-clear maxx minn
-set(handles.TextUpdate,'String','Loading .DCM Data 80%'); drawnow;
 
-%Load MAGnitude image
-[MAG,~] = shuffleDCM(Anatpath,0,1);
-MAG = mean(MAG,4);
-set(handles.TextUpdate,'String','Loading .DCM Data 100%'); drawnow;
+MAG = mean(mag,4);
 
-filetype = 'dcm';
-nframes = 15;%INFO.CardiacNumberOfImages; %number of reconstructed frames
-timeres = 60/(60*nframes);%INFO.NominalInterval/nframes; %temporal resolution (ms)
-res = INFO.PixelSpacing(1); %spatial res (mm) (ASSUMED ISOTROPIC IN PLANE)
-if strcmp('GE',Vendor)
-    slicespace=INFO.SpacingBetweenSlices;
-elseif strcmp('Siemens',Vendor)
-    slicespace=INFO.SliceThickness;
-elseif strcmp('Philips',Vendor)
-    slicespace=INFO.SliceThickness;
-end
-matrix(1) = INFO.Rows; %number of pixels in rows
-matrix(2) = INFO.Columns;
-matrix(3) = length(MAG(1,1,:)); %number of slices
-VoxDims=[res res slicespace];
+nframes = length(magvol);
+
+% are these needed?
+VENC=700;
+timeres = 60/(60*nframes);%INFO.NominalInterval/nframes; %temporal resolution (ms) ????
+
+matrix = magvol(1).dim;
+VoxDims = sqrt(sum(magvol(1).mat(1:3,1:3).^2));
+res = VoxDims(1);
+slicespace = VoxDims(3);
+
 %% Import Complex Difference
-set(handles.TextUpdate,'String','Loading Complex Difference Data'); drawnow;
 timeMIP = calc_angio(MAG, vMean, VENC);
+
 %% Manual Background Phase Correction (if necessary)
 back = zeros(size(vMean),'single');
 if ~BGPCdone
-    set(handles.TextUpdate,'String','Phase Correction with Polynomial'); drawnow;
     [poly_fitx,poly_fity,poly_fitz] = background_phase_correction(MAG,vMean(:,:,:,1),vMean(:,:,:,2),vMean(:,:,:,3));
     disp('Correcting data with polynomial');
     xrange = single(linspace(-1,1,size(MAG,1)));
@@ -123,7 +107,6 @@ if ~BGPCdone
     clear X Y Z poly_fitx poly_fity poly_fitz xrange yrange zrange
 end
 %% Find optimum global threshold for total branch segmentation
-set(handles.TextUpdate,'String','Segmenting and creating Tree'); drawnow;
 step = 0.001; %step size for sliding threshold
 UPthresh = 0.8; %max upper threshold when creating Sval curvature plot
 SMf = 10;
@@ -136,21 +119,24 @@ if own_seg == 0
     conn = 6; %connectivity (i.e. 6-pt)
     segment = bwareaopen(segment,areaThresh,conn); %inverse fill holes
 else
-    NII = spm_vol('eICAB_seg_realign.nii');
+    NII = spm_vol('/home/afernandezpe/borrar/4DFlow_reg/tests_QVT/rBMRI198894_4DQflowNeuro_AP_1803_tAvgProj_eICAB_WB.nii.gz');
     segment = spm_read_vols(NII);
+    segment(isnan(segment)) = 0;
 end
 % save raw (cropped) images to imageData structure (for Visual Tool)
 imageData.MAG = MAG;
 imageData.CD = timeMIP; 
 imageData.V = vMean;
 imageData.Segmented = segment;
-imageData.Header = INFO;
+imageData.Header = json_mag;
+
+%save("C:\Users\u149879\Desktop\trial\original_ABI\ABI_nifti",imageData,'-mat')
 
 %% Feature Extraction
 % Get trim and create the centerline data
 sortingCriteria = 3; %sorts branches by junctions/intersects 
 spurLength = 8; %minimum branch length (removes short spurs)
-[~,~,branchList,~] = feature_extraction(sortingCriteria,spurLength,vMean,segment,handles);
+[~,~,branchList,~] = feature_extraction(sortingCriteria,spurLength,vMean,segment);
 
 %% You can load another segmentation here if you want which will overlap on images
 Exseg=segment; %for now, dummy copy, can do feature extraction
@@ -164,16 +150,15 @@ if strcmp(SEG_TYPE,'kmeans')
         velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
         vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes] ...
         = paramMap_params_kmeans(filetype,branchList,matrix,timeMIP,vMean, ...
-    back,BGPCdone,directory,nframes,res,MAG,handles, v,slicespace);
+    back,BGPCdone,directory,nframes,res,MAG, v,slicespace);
 elseif strcmp(SEG_TYPE,'thresh')
     [area_val,diam_val,flowPerHeartCycle_val,maxVel_val,PI_val,RI_val,flowPulsatile_val,...
         velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
         vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes,pixelSpace,...
         segmentFullEx,PIvel_val] ...
         = paramMap_params_threshS(filetype,branchList,matrix,timeMIP,vMean, ...
-    back,BGPCdone,directory,nframes,res,MAG,handles, v,slicespace,Exseg);
+    back,BGPCdone,directory,nframes,res,MAG, v,slicespace,Exseg);
 else
     disp("Incorrect segmentation type selected, please select 'kmeans' or 'thresh'");
 end 
-set(handles.TextUpdate,'String','All Data Loaded'); drawnow;
 return

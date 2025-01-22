@@ -3,7 +3,7 @@ function [area_val,diam_val,flowPerHeartCycle_val,maxVel_val,PI_val,RI_val,flowP
     vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes,pixelSpace,segmentFullJS,maxVelFrame] ...
     = paramMap_params_threshS(varargin)
 %filetype,branchList,matrix,timeMIP,vMean,back,...
-  %  BGPCdone,directory,nframes,res,MAG,IDXstart,IDXend,handles)
+  %  BGPCdone,directory,nframes,res,MAG,IDXstart,IDXend)
 %PARAMMAP_PARAMS_NEW: Create tangent planes and calculate hemodynamics
 %   Based on a sliding threshold segmentation algorithm developed by Carson Hoffman
 %   Used by: loadpcvipr.m
@@ -20,9 +20,8 @@ directory = varargin{8};
 nframes = varargin{9};
 res = varargin{10};
 MAG = varargin{11};
-handles = varargin{12};
-v = varargin{13};
-sliceSpace=varargin{14};
+v = varargin{12};
+sliceSpace=varargin{13};
 %% Tangent Plane Creation
 r=10; %radius of plan generation (in pixels)
 InterpVals = 4; %choose the interpolation between pixel values
@@ -41,7 +40,6 @@ for i=1:length(Tangent_V(:,1))
 end
 clear DOT RAD T xyNorm
 %% Interpolate Matrices Into the Planes
-set(handles.TextUpdate,'String','Interpolating Data');drawnow;
 % Get interpolated velocity from 3 directions, multipley w/ tangent vector
 [v1] = interp_vol_to_planes(vMean(:,:,:,1),x,y,z,x_full,y_full,z_full,width,segments);
 [v2] = interp_vol_to_planes(vMean(:,:,:,2),x,y,z,x_full,y_full,z_full,width,segments);
@@ -59,7 +57,6 @@ vTimeFrameave = sqrt(temp(:,:,1).^2 + temp(:,:,2).^2 + temp(:,:,3).^2); %(mm/s)
 
 clear v1 v2 v3 MAG timeMIP temp vtimeave
 %% In-Plane Segmentation
-set(handles.TextUpdate,'String','Performing In-Plane Segmentation');drawnow;
 [area_val,diam_val,segmentFull] = segment_cross_section_thresh(segments,width,timeMIPcrossection,vTimeFrameave,MAGcrossection,res,r,InterpVals,pixelSpace);
 if length(varargin) == 16
     Exseg=varargin{15};
@@ -86,7 +83,6 @@ COL = repmat(1:InterpVals*(width):(width)^2,[r*2+1 1])-1; %rep. lf-rt
 idCOL = reshape(ROW+COL,[1 numel(ROW)]); %interp query points
 for j = 1:nframes
     if strcmp(filetype,'dat')
-        set(handles.TextUpdate,'String',['Calculating Quantitative Params Frame: ' num2str(j) '/' num2str(nframes)]);drawnow;
         % Load x,y,z components of velocity - single frame
         vx = load_dat(fullfile(directory, ['ph_' num2str(j-1,'%03i') '_vd_1.dat']),[matrix(1) matrix(2) matrix(3)]);
         vy = load_dat(fullfile(directory, ['ph_' num2str(j-1,'%03i') '_vd_2.dat']),[matrix(1) matrix(2) matrix(3)]);
@@ -102,7 +98,6 @@ for j = 1:nframes
             vz = vz - back(:,:,:,3);
         end 
     elseif strcmp(filetype,'hdf5')
-        set(handles.TextUpdate,'String',['Calculating Quantitative - Parameters Time Frame: ' num2str(j) '/' num2str(nframes)]);drawnow;
         xvel_label = append('/Data/',['ph_' num2str(j-1,'%03i') '_vd_1']);
         yvel_label = append('/Data/',['ph_' num2str(j-1,'%03i') '_vd_2']);
         zvel_label = append('/Data/',['ph_' num2str(j-1,'%03i') '_vd_3']);
@@ -123,12 +118,10 @@ for j = 1:nframes
             vz = vz - back(:,:,:,3);
         end
     elseif strcmp(filetype,'dcm') || strcmp(filetype,'nii')
-        set(handles.TextUpdate,'String',['Calculating Quantitative Params Frame: ' num2str(j) '/' num2str(nframes)]);drawnow;
         vx = squeeze(v(:,:,:,1,j));
         vy = squeeze(v(:,:,:,2,j));
         vz = squeeze(v(:,:,:,3,j));
     else
-        set(handles.TextUpdate,'String',['Calculating Quantitative (python H5 export) - Parameters Time Frame: ' num2str(j) '/' num2str(nframes)]);drawnow;
         % use for flow python
         % Load x,y,z components of velocity (cropped) - single frame
          vx = h5read(fullfile(directory,'Flow.h5'),'/VX', ... 
