@@ -2,7 +2,7 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
     maxVel_val,PI_val,RI_val,flowPulsatile_val,velMean_val, ...
     VplanesAllx,VplanesAlly,VplanesAllz,Planes,branchList,segment,r, ...
     timeMIPcrossection,segmentFull,vTimeFrameave,MAGcrossection, imageData, ...
-    bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullEx,autoFlow,pixelSpace, VoxDims, PIvel_val] = loadNII(directory,handles)
+    bnumMeanFlow,bnumStdvFlow,StdvFromMean,segmentFullEx,autoFlow,pixelSpace, VoxDims, PIvel_val] = loadNII(directory)
 % loadNII loads NIFTI files and then processes them.
 %
 % It returns too much to discuss, but it basically passes through all the
@@ -27,7 +27,7 @@ BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 
 filetype = 'nii';
-set(handles.TextUpdate,'String','Loading .NII Data'); drawnow;
+% set(handles.TextUpdate,'String','Loading .NII Data'); drawnow;
 
 folders = dir(fullfile(directory,'scans'));
 folders(ismember({folders.name}, {'.', '..'})) = [];
@@ -70,7 +70,7 @@ v(:,:,:,2,:)=-squeeze(vx(:,:,:,:))*10;
 v(:,:,:,1,:)=squeeze(vy(:,:,:,:))*10;
 v(:,:,:,3,:)=-squeeze(vz(:,:,:,:))*10;
 
-set(handles.TextUpdate,'String','Loaded NIfTI data'); drawnow;
+% set(handles.TextUpdate,'String','Loaded NIfTI data'); drawnow;
 
 vMean = mean(v,5);
 
@@ -88,14 +88,17 @@ res = VoxDims(1);
 slicespace = VoxDims(3);
 
 %% Import Complex Difference
-set(handles.TextUpdate,'String','Loading Complex Difference Data'); drawnow;
+% set(handles.TextUpdate,'String','Loading Complex Difference Data'); drawnow;
 timeMIP = calc_angio(MAG, vMean, VENC);
 
 %% Manual Background Phase Correction (if necessary)
 back = zeros(size(vMean),'single');
 if ~BGPCdone
-    set(handles.TextUpdate,'String','Phase Correction with Polynomial'); drawnow;
-    [poly_fitx,poly_fity,poly_fitz] = background_phase_correction(MAG,vMean(:,:,:,1),vMean(:,:,:,2),vMean(:,:,:,3));
+    % set(handles.TextUpdate,'String','Phase Correction with Polynomial'); drawnow;
+    fit_order = 2;
+    cd_thresh = 0.14;
+    noise_thresh = 0.1;
+    [poly_fitx,poly_fity,poly_fitz] = unattended_background_phase_correction(MAG,vMean(:,:,:,1),vMean(:,:,:,2),vMean(:,:,:,3),fit_order,cd_thresh,noise_thresh);
     disp('Correcting data with polynomial');
     xrange = single(linspace(-1,1,size(MAG,1)));
     yrange = single(linspace(-1,1,size(MAG,2)));
@@ -112,7 +115,7 @@ if ~BGPCdone
     clear X Y Z poly_fitx poly_fity poly_fitz xrange yrange zrange
 end
 %% Find optimum global threshold for total branch segmentation
-set(handles.TextUpdate,'String','Segmenting and creating Tree'); drawnow;
+% set(handles.TextUpdate,'String','Segmenting and creating Tree'); drawnow;
 step = 0.001; %step size for sliding threshold
 UPthresh = 0.8; %max upper threshold when creating Sval curvature plot
 SMf = 10;
@@ -142,7 +145,7 @@ imageData.Header = json_mag;
 % Get trim and create the centerline data
 sortingCriteria = 3; %sorts branches by junctions/intersects 
 spurLength = 8; %minimum branch length (removes short spurs)
-[~,~,branchList,~] = feature_extraction(sortingCriteria,spurLength,vMean,segment,handles);
+[~,~,branchList,~] = feature_extraction(sortingCriteria,spurLength,vMean,segment);
 
 %% You can load another segmentation here if you want which will overlap on images
 Exseg=segment; %for now, dummy copy, can do feature extraction
@@ -156,16 +159,16 @@ if strcmp(SEG_TYPE,'kmeans')
         velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
         vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes] ...
         = paramMap_params_kmeans(filetype,branchList,matrix,timeMIP,vMean, ...
-    back,BGPCdone,directory,nframes,res,MAG, v,slicespace, handles);
+    back,BGPCdone,directory,nframes,res,MAG, v,slicespace);
 elseif strcmp(SEG_TYPE,'thresh')
     [area_val,diam_val,flowPerHeartCycle_val,maxVel_val,PI_val,RI_val,flowPulsatile_val,...
         velMean_val,VplanesAllx,VplanesAlly,VplanesAllz,r,timeMIPcrossection,segmentFull,...
         vTimeFrameave,MAGcrossection,bnumMeanFlow,bnumStdvFlow,StdvFromMean,Planes,pixelSpace,...
         segmentFullEx,PIvel_val] ...
         = paramMap_params_threshS(filetype,branchList,matrix,timeMIP,vMean, ...
-    back,BGPCdone,directory,nframes,res,MAG,handles, v,slicespace,Exseg);
+    back,BGPCdone,directory,nframes,res,MAG, v,slicespace,Exseg);
 else
     disp("Incorrect segmentation type selected, please select 'kmeans' or 'thresh'");
 end 
-set(handles.TextUpdate,'String','All Data Loaded'); drawnow;
+% set(handles.TextUpdate,'String','All Data Loaded'); drawnow;
 return

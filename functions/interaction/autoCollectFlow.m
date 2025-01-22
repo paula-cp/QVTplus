@@ -20,14 +20,14 @@ function [] = autoCollectFlow(SVPATH)
         P.Label=Values(:,2);
         P.Loc=Values(:,3);
     end
-    fig = uifigure("Position",[100 100 350 375]);
-    fig.Tag = 'testGUI2_tag';
-    uit = uitable(fig,"Data",P);
-    uit.ColumnEditable=true;
-    But = uibutton(fig,"Text","Done","Position",[150 340 50 25],...
-        "ButtonPushedFcn", @(src,event) plotButtonPushed(fig,uit));
-    function plotButtonPushed(fig,uit)
-        writetable(uit.Data,fullfile(SVPATH,'LabelsQVT.csv'));
-        close(fig)
-    end
+    % fig = uifigure("Position",[100 100 350 375]);
+    % fig.Tag = 'testGUI2_tag';
+    % uit = uitable(fig,"Data",P);
+    % uit.ColumnEditable=true;
+    % But = uibutton(fig,"Text","Done","Position",[150 340 50 25],...
+    %     "ButtonPushedFcn", @(src,event) plotButtonPushed(fig,uit));
+    % function plotButtonPushed(fig,uit)
+    %     writetable(uit.Data,fullfile(SVPATH,'LabelsQVT.csv'));
+    %     close(fig)
+    % end
 end
