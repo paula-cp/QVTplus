@@ -90,7 +90,7 @@ timeMIP = calc_angio(MAG, vMean, VENC);
 %% Manual Background Phase Correction (if necessary)
 back = zeros(size(vMean),'single');
 if ~BGPCdone
-    [poly_fitx,poly_fity,poly_fitz] = background_phase_correction(MAG,vMean(:,:,:,1),vMean(:,:,:,2),vMean(:,:,:,3));
+    [poly_fitx,poly_fity,poly_fitz] = unattended_background_phase_correction(MAG,vMean(:,:,:,1),vMean(:,:,:,2),vMean(:,:,:,3),2,0.11,0.06);
     disp('Correcting data with polynomial');
     xrange = single(linspace(-1,1,size(MAG,1)));
     yrange = single(linspace(-1,1,size(MAG,2)));
