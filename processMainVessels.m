@@ -66,3 +66,23 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
         locEntry = [NaN, NaN];
     end
 end
+
+function bestSegment = checkSecondarySegments(bestSegment, secondaryIndices, data_struct)
+    largestY2 = -inf;
+
+    for segIdx = secondaryIndices'
+        segmentPositions = data_struct.branchList(data_struct.branchList(:, 4) == segIdx, 1:3);
+
+        firstPoint = segmentPositions(1, :);
+        lastPoint = segmentPositions(end, :);
+
+        if lastPoint(2) + 5 < firstPoint(2) && (lastPoint(3) + 3) > firstPoint(3) % Conditions on Y and Z
+            meanY = mean(segmentPositions(:, 2));
+            if meanY > largestY2
+                bestSegment = segIdx;
+                largestY2 = meanY;
+            end
+        end
+    end
+end
+
