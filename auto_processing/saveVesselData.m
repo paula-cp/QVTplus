@@ -103,19 +103,17 @@ function saveVesselExcelData(vesselName, vesselNumber, pointOfInterest, data_str
         area,diam,maxVel,meanVel,flowPerHeartCycle,PI,RI))));
     time_avg{end-1,1} = 'Mean';
     time_avg{end,1} = 'Standard Deviation';
-    xlwrite([SavePath filesep 'SummaryParamTool.xls'],time_avg,[savename '_T_averaged']);
-    set(handles.TextUpdate,'String','Saving Data...');drawnow;
+    xlwrite([output_path filesep 'SummaryParamTool.xls'],time_avg,[vesselName '_T_averaged']);
     
     % save time-resolved
-    spaces = repmat({''},1,nframes-1);
+    spaces = repmat({''},1,data_struct.nframes-1);
     col_header2 = ({'Cardiac Time (ms)'});
     col_header3 = horzcat({'Point along Vessel','Flow (mL/s)'},spaces);
     col_header2 = horzcat(col_header2, num2cell(real(data_struct.timeres/1000*linspace(1,data_struct.nframes,data_struct.nframes))));
     time_resolve = vertcat(col_header2, col_header3, num2cell(real(horzcat(Labels',flowPulsatile))));
     time_resolve{end-1,1} = 'Mean';
     time_resolve{end,1} = 'Standard Deviation';
-    xlwrite([SavePath filesep 'SummaryParamTool.xls'],time_resolve,[savename '_T_resolved']);
-    set(handles.TextUpdate,'String','Saving Data....');drawnow;
+    xlwrite([output_path filesep 'SummaryParamTool.xls'],time_resolve,[vesselName '_T_resolved']);
 end
 
 
