@@ -1,4 +1,4 @@
-function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, output_path, imageData, data_struct)
+function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, output_path, imageData, refImage, data_struct)
     % Perform label transfer between eICAB and QVT masks
     % Includes 180-degree flip, SPM registration, and label transfer
     % Inputs:
@@ -7,15 +7,66 @@ function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, outpu
     % - data_struct: QVT data structure containing vessel and segmentation information
 
     % Step 1: Decompress the .nii.gz file and recenter
-    decompressedFilePath = decompressAndRecenter(eICAB_path);
+    % decompressedFilePath = decompressAndRecenter(eICAB_path);
+    
+    % select eICAB orig_resampled file
+    fileList = dir(fullfile(eICAB_path, '**/*_orig_resampled.nii*'));
+    if isempty(fileList)
+        error('No eICAB orig_resampled file found in the specified path.');
+    end
 
-    QVT_path = saveQVTseg(output_path, imageData, data_struct);
+    tofOrigResampled = fullfile(fileList(1).folder, fileList(1).name);
+
+    % if it is .gz, decompress it
+    if contains(fileList(1).name, '.gz')
+        compressedFilePath = fullfile(fileList(1).folder, fileList(1).name);
+        gunzip(compressedFilePath, output_path);
+        tofOrigResampled = fullfile(output_path, strrep(fileList(1).name, '.gz', ''));
+    else
+        % copy the file to the output path
+        cp(fullfile(fileList(1).folder, fileList(1).name), output_path);
+        tofOrigResampled = fullfile(output_path, fileList(1).name);
+    end
+
+    % select eICAB orig_eICAB_CW file
+    fileList = dir(fullfile(eICAB_path, '**/*_orig_eICAB_CW.nii*'));
+    if isempty(fileList)
+        error('No eICAB orig_eICAB_CW file found in the specified path.');
+    end
+
+    tofOrigEICABCW = fullfile(fileList(1).folder, fileList(1).name);
+
+    % if it is .gz, decompress it
+    if contains(fileList(1).name, '.gz')
+        compressedFilePath = fullfile(fileList(1).folder, fileList(1).name);
+        gunzip(compressedFilePath, output_path);
+        tofOrigEICABCW = fullfile(output_path, strrep(fileList(1).name, '.gz', ''));
+    else
+        % copy the file to the output path
+        cp(fullfile(fileList(1).folder, fileList(1).name), output_path);
+        tofOrigEICABCW = fullfile(output_path, fileList(1).name);
+    end
+
+    
+    [QVT_path, QVT_mag] = saveQVTseg(output_path, imageData, data_struct);
+    
 
     % Step 2: Perform 180-degree flip along the X-axis
-    flippedFilePath = flipImage180(decompressedFilePath);
+    % flippedFilePath = flipImage180(decompressedFilePath);
+
+    % Get the AP magnitude image from the refImage folder
+    fileList = dir(fullfile(refImage, '**/*AP*.nii*'));
+    fileList = fileList(~contains({fileList.name}, '_ph'));
+    if isempty(fileList)
+        error('No AP magnitude image found in the specified path.');
+    end
+
+    % Generate a maximum intensity projection (MIP) image from the AP magnitude image
+    AP_image = fullfile(fileList(1).folder, fileList(1).name);
+    MIP_image = generateMIP(AP_image, output_path);
 
     % Step 3: Perform SPM registration
-    registeredImagePath = performSPMRegistration(QVT_path, flippedFilePath);
+    registeredImagePath = performSPMRegistration(QVT_mag, tofOrigResampled, tofOrigEICABCW);
 
     % Step 4: Perform label transfer and create multi-label QVT segmentation
     updatedBinarySegMatrix = transferLabels(registeredImagePath, imageData);
@@ -51,7 +102,7 @@ function decompressedFilePath = decompressAndRecenter(folderPath)
     spm_write_vol(V, data);
 end
 
-function QVT_path = saveQVTseg(output_path, imageData, data_struct)
+function [QVT_path, QVT_mag] = saveQVTseg(output_path, imageData, data_struct)
 
     dataMatrix = imageData.Segmented;
     V = struct();
@@ -77,6 +128,32 @@ function QVT_path = saveQVTseg(output_path, imageData, data_struct)
 
     % Display confirmation
     disp(['NIfTI file saved and recentered successfully at: ', QVT_path]);
+
+    % repeat for imageData.MAG
+    dataMatrix = imageData.MAG;
+    V = struct();
+    V.fname = fullfile(output_path, 'QVT_MAG.nii');
+    V.dim = size(dataMatrix);
+    V.dt = [spm_type('float32'), 0];
+    V.mat = eye(4);
+
+    % Set voxel dimensions
+    V.mat(1,1) = data_struct.VoxDims(1);
+    V.mat(2,2) = data_struct.VoxDims(2);
+    V.mat(3,3) = data_struct.VoxDims(3);
+
+    % Compute and set the new origin
+    new_origin = (V.dim(1:3) + 1) / 2; % Center of the image
+    V.mat(1:3, 4) = V.mat(1:3, 1:3) * -new_origin';
+
+    % Write the volume with the recentered transformation
+    spm_write_vol(V, dataMatrix);
+
+    % Output the path to the saved file
+    QVT_mag = V.fname;
+
+    % Display confirmation
+    disp(['NIfTI file saved and recentered successfully at: ', QVT_mag]);
 end
 
 
@@ -94,40 +171,48 @@ function flippedFilePath = flipImage180(decompressedFilePath)
 
     % Save the flipped image
     [folder, baseName, ext] = fileparts(decompressedFilePath);
-    flippedFilePath = fullfile(folder, [baseName, '_rot', ext]);
+    flippedFilePath = fullfile(folder, [baseName, ext]);
     V.fname = flippedFilePath;
     spm_write_vol(V, flippedData);
 end
 
 
-function registeredImagePath = performSPMRegistration(QVT_path, sourceImagePath)
+function registeredImagePath = performSPMRegistration(QVT_path, sourceImagePath, eICABImagePath)
+    % first, flip sourceImage and eICABImage
+    sourceImagePath = flipImage180(sourceImagePath);
+    eICABImagePath = flipImage180(eICABImagePath);
+
     % Perform SPM-based registration to align eICAB and QVT masks
-    spm('defaults', 'fmri');
     spm_jobman('initcfg');
 
     % Estimate transformation
-    matlabbatch{1}.spm.spatial.coreg.estimate.ref = {QVT_path};
-    matlabbatch{1}.spm.spatial.coreg.estimate.source = {sourceImagePath};
-    matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.cost_fun = 'nmi';
-    matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.sep = [10 4 2 1];
-    matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.tol = [0.02 0.02 0.02 0.01 0.01 0.01 0.001 0.001 0.001 0.01 0.01 0.01];
-    matlabbatch{1}.spm.spatial.coreg.estimate.eoptions.fwhm = [3 3];
+    matlabbatch{1}.spm.spatial.coreg.estwrite.ref = {QVT_path};
+    matlabbatch{1}.spm.spatial.coreg.estwrite.source = {sourceImagePath};
+    matlabbatch{1}.spm.spatial.coreg.estwrite.other = {eICABImagePath};
+    matlabbatch{1}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
+    matlabbatch{1}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
+    matlabbatch{1}.spm.spatial.coreg.estwrite.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+    matlabbatch{1}.spm.spatial.coreg.estwrite.eoptions.fwhm = [7 7];
+    matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.interp = 0;
+    matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
+    matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.mask = 0;
+    matlabbatch{1}.spm.spatial.coreg.estwrite.roptions.prefix = 'r_';
 
     spm_jobman('run', matlabbatch);
     clear matlabbatch;
 
-    % Apply transformation
-    matlabbatch{1}.spm.spatial.coreg.write.ref = {QVT_path};
-    matlabbatch{1}.spm.spatial.coreg.write.source = {sourceImagePath};
-    matlabbatch{1}.spm.spatial.coreg.write.roptions.interp = 0;
-    matlabbatch{1}.spm.spatial.coreg.write.roptions.wrap = [0 0 0];
-    matlabbatch{1}.spm.spatial.coreg.write.roptions.mask = 0;
-    matlabbatch{1}.spm.spatial.coreg.write.roptions.prefix = 'r_';
+    % % Apply transformation
+    % matlabbatch{1}.spm.spatial.coreg.write.ref = {QVT_path};
+    % matlabbatch{1}.spm.spatial.coreg.write.source = {eICAB_path};
+    % matlabbatch{1}.spm.spatial.coreg.write.roptions.interp = 0;
+    % matlabbatch{1}.spm.spatial.coreg.write.roptions.wrap = [0 0 0];
+    % matlabbatch{1}.spm.spatial.coreg.write.roptions.mask = 0;
+    % matlabbatch{1}.spm.spatial.coreg.write.roptions.prefix = 'r_';
 
-    spm_jobman('run', matlabbatch);
+    % spm_jobman('run', matlabbatch);
 
     % Return the registered image path
-    [folder, baseName, ext] = fileparts(sourceImagePath);
+    [folder, baseName, ext] = fileparts(eICABImagePath);
     registeredImagePath = fullfile(folder, ['r_', baseName, ext]);
 end
 
@@ -307,4 +392,32 @@ function [correspondenceDict, multiQVT] = generateCorrespondenceDict(folderPath,
             correspondenceDict = rmfield(correspondenceDict, fieldNames{i});
         end
     end
+end
+
+function [MIP_image] = generateMIP(AP_image, output_path)
+    % Generate a maximum intensity projection (MIP) image from the AP magnitude image
+    V = spm_vol(AP_image);
+    data = spm_read_vols(V);
+
+    % Compute the MIP image
+    MIP_data = max(data, [], 4);
+
+    % Save the MIP image
+    [folder, baseName, ext] = fileparts(AP_image);
+
+    if contains(baseName, '.nii')
+        baseName = strrep(baseName, '.nii', '');
+    end
+
+    if isempty(ext)
+        ext = '.nii';
+    elseif strcmp(ext, '.gz')
+        ext = '.nii';
+    end
+
+    MIP_image = fullfile(output_path, [baseName, '_MIP', ext]);
+
+    W = V(1);
+    W.fname = MIP_image;
+    spm_write_vol(W, MIP_data);
 end

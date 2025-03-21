@@ -23,42 +23,81 @@ function [nframes,matrix,res,timeres,VENC,area_val,diam_val,flowPerHeartCycle_va
 %% Initialization
 clc
 BGPCdone=0; %0=do backgroun correction, 1=don't do background correction.
-%VENC = 800; %may change depending on participant
+%VENC = 700; %may change depending on participant
 autoFlow=1; %if you want automatically extracted BC's and flow profiles 0 if not.
 
 filetype = 'nii';
 
-folders = dir(fullfile(directory,'scans'));
-folders(ismember({folders.name}, {'.', '..'})) = [];
-folders = {folders([folders.isdir]).name};
+% Check if 'scans' subfolder exists
+if isfolder(fullfile(directory, 'scans'))
+    base_dir = fullfile(directory, 'scans');
+    is_scans_present = true;
+else
+    base_dir = directory;
+    is_scans_present = false;
+end
 
-folderAP = folders(~cellfun('isempty', regexp(folders, 'AP')));
-folderAP = folderAP{1};
-folderRL = folders(~cellfun('isempty', regexp(folders, 'RL')));
-folderRL = folderRL{1};
-folderFH = folders(~cellfun('isempty', regexp(folders, 'FH')));
-folderFH = folderFH{1};
+% Find direction folders with different approaches depending on structure
+if is_scans_present
+    % Original approach with scans subfolder
+    folders = dir(base_dir);
+    folders(ismember({folders.name}, {'.', '..'})) = [];
+    folders = {folders([folders.isdir]).name};
+    
+    folderAP = folders(~cellfun('isempty', regexp(folders, 'AP')));
+    folderAP = folderAP{1};
+    folderRL = folders(~cellfun('isempty', regexp(folders, 'RL')));
+    folderRL = folderRL{1};
+    folderFH = folders(~cellfun('isempty', regexp(folders, 'FH')));
+    folderFH = folderFH{1};
+else
+    % Directly search for direction folders in the main directory
+    all_dirs = dir(base_dir);
+    all_dirs = all_dirs([all_dirs.isdir]);
+    dir_names = {all_dirs.name};
+    
+    folderAP = dir_names(~cellfun('isempty', regexp(dir_names, 'AP')));
+    folderAP = folderAP{1};
+    folderRL = dir_names(~cellfun('isempty', regexp(dir_names, 'RL')));
+    folderRL = folderRL{1};
+    folderFH = dir_names(~cellfun('isempty', regexp(dir_names, 'FH')));
+    folderFH = folderFH{1};
+end
 
+% Get paths for each direction
+ap_path = fullfile(base_dir, folderAP);
+rl_path = fullfile(base_dir, folderRL);
+fh_path = fullfile(base_dir, folderFH);
 
-json_mag = dir(fullfile(directory,'scans', folderAP,'NIFTI','*.json'));
-json_mag = fileread(fullfile(json_mag(1).folder,json_mag(1).name));
-json_mag = jsondecode(json_mag); 
+% Check if NIFTI subfolder exists in each direction folder
+if isfolder(fullfile(ap_path, 'NIFTI'))
+    ap_path = fullfile(ap_path, 'NIFTI');
+    rl_path = fullfile(rl_path, 'NIFTI');
+    fh_path = fullfile(fh_path, 'NIFTI');
+end
 
-magvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*.nii.gz'));
-magvol = spm_vol(fullfile(magvol(1).folder,magvol(1).name));
-mag = flip(spm_read_vols(magvol),3);
+% Load magnitude JSON file
+json_files = dir(fullfile(ap_path, '*.json'));
+json_mag = fileread(fullfile(json_files(1).folder, json_files(1).name));
+json_mag = jsondecode(json_mag);
 
-vxvol = dir(fullfile(directory,'scans', folderAP, 'NIFTI', '*_ph.nii.gz'));
-vxvol = spm_vol(fullfile(vxvol(1).folder,vxvol(1).name));
-vx = flip(spm_read_vols(vxvol),3);
+% Load magnitude volume
+magvol = dir(fullfile(ap_path, '*.nii.gz'));
+magvol = spm_vol(fullfile(magvol(1).folder, magvol(1).name));
+mag = flip(spm_read_vols(magvol), 3);
 
-vyvol = dir(fullfile(directory,'scans', folderRL, 'NIFTI', '*_ph.nii.gz'));
-vyvol = spm_vol(fullfile(vyvol(1).folder,vyvol(1).name));
-vy = flip(spm_read_vols(vyvol),3);
+% Load phase volumes for each direction
+vxvol = dir(fullfile(ap_path, '*_ph.nii.gz'));
+vxvol = spm_vol(fullfile(vxvol(1).folder, vxvol(1).name));
+vx = flip(spm_read_vols(vxvol), 3);
 
-vzvol = dir(fullfile(directory,'scans', folderFH, 'NIFTI', '*_ph.nii.gz'));
-vzvol = spm_vol(fullfile(vzvol(1).folder,vzvol(1).name));
-vz = flip(spm_read_vols(vzvol),3);
+vyvol = dir(fullfile(rl_path, '*_ph.nii.gz'));
+vyvol = spm_vol(fullfile(vyvol(1).folder, vyvol(1).name));
+vy = flip(spm_read_vols(vyvol), 3);
+
+vzvol = dir(fullfile(fh_path, '*_ph.nii.gz'));
+vzvol = spm_vol(fullfile(vzvol(1).folder, vzvol(1).name));
+vz = flip(spm_read_vols(vzvol), 3);
 
 [a,c,b,d] = size(vx);
 v = zeros([a,c,b,3,d],'single');
@@ -76,7 +115,7 @@ MAG = mean(mag,4);
 nframes = length(magvol);
 
 % are these needed?
-VENC=700;
+VENC=700; %VENC is 700 mm/s, 70 cm/s
 timeres = 60/(60*nframes);%INFO.NominalInterval/nframes; %temporal resolution (ms) ????
 
 matrix = magvol(1).dim;

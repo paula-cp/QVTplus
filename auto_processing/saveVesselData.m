@@ -4,6 +4,13 @@ function saveVesselData(LOCs, data_struct, output_path)
     generateSummaryCenterline(LOCs, data_struct, output_path)
     for i = 1:numel(fields)
         vesselName = fields{i};
+
+        % TODO: estamos saltando la COMM porque habria que tratarla distinto para
+        % seleccionar el punto de interes (o seleccionar todos sus puntos para la media)
+        if strcmp(vesselName, 'COMM')
+            continue;
+        end
+
         vesselInfo = LOCs.(vesselName);
         vesselNumber = vesselInfo(1);
         pointOfInterest = vesselInfo(2);
