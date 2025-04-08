@@ -26,27 +26,50 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
                 end
 
             elseif ismember(keyName, {'RPCA', 'LPCA'})
-                % Prioritize based on Y and Z criteria
-                firstPoint = segmentPositions(1, :);
-                lastPoint = segmentPositions(end, :);
-
-                if lastPoint(2) + 5 < firstPoint(2) % Check Y condition
-                    meanY = mean(segmentPositions(:, 2));
-                    meanZ = mean(segmentPositions(:, 3));
-                    if meanY + 2 > largestY && meanZ - 15 < lowestZ
-                        bestSegment = segIdx;
-                        largestY = meanY;
-                        lowestZ = meanZ;
-                    end
+                % % Prioritize based on Y and Z criteria
+                % firstPoint = segmentPositions(1, :);
+                % lastPoint = segmentPositions(end, :);
+                % 
+                % if lastPoint(2) + 5 < firstPoint(2) % Check Y condition
+                %     meanY = mean(segmentPositions(:, 2));
+                %     meanZ = mean(segmentPositions(:, 3));
+                %     if meanY + 2 > largestY && meanZ - 15 < lowestZ
+                %         bestSegment = segIdx;
+                %         largestY = meanY;
+                %         lowestZ = meanZ;
+                %     end
+                % end
+                bestSegment = [];
+                bestSignalQuality = -inf;
+            
+                % Merge PCA + PC2 candidates
+                segmentIndices = correspondenceDict.(keyName);
+                if strcmp(keyName, 'RPCA') && isfield(correspondenceDict, 'RPC2')
+                    segmentIndices = [segmentIndices, correspondenceDict.('RPC2')];
+                elseif strcmp(keyName, 'LPCA') && isfield(correspondenceDict, 'LPC2')
+                    segmentIndices = [segmentIndices, correspondenceDict.('LPC2')];
                 end
-
-            elseif ismember(keyName, {'RMCA', 'LMCA'})
-                % Prioritize segments closer to centerline
-                meanX = mean(segmentPositions(:, 1));
-                centerlineDist = abs(meanX - (size(multiQVT, 1) / 2) - 3);
-                if centerlineDist < lowestDist
-                    bestSegment = segIdx;
-                    lowestDist = centerlineDist;
+            
+                for segIdx = segmentIndices
+                    segmentMask = data_struct.branchList(:, 4) == segIdx;
+                    if nnz(segmentMask) < 5
+                        continue;
+                    end
+            
+                    flowVals = data_struct.flowPulsatile_val(segmentMask, :);  % [pixels x time]
+                    if size(flowVals, 1) > 1
+                        corrMatrix = corr(flowVals');  % transpose to [time x pixels], get [pixels x pixels] correlation
+                        upperTri = triu(corrMatrix, 1);  % exclude diagonal and lower triangle
+                        corrVals = upperTri(upperTri ~= 0);
+                        signalStrength = mean(corrVals);  % or median(corrVals)
+                    else
+                        signalStrength = 0;  % Not enough data to compute correlation
+                    end
+            
+                    if signalStrength > bestSignalQuality
+                        bestSegment = segIdx;
+                        bestSignalQuality = signalStrength;
+                    end
                 end
             end
         end
