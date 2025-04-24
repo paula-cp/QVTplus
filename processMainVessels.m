@@ -43,15 +43,17 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
                 bestSignalQuality = -inf;
             
                 % Merge PCA + PC2 candidates
-                segmentIndices = correspondenceDict.(keyName);
+                segmentSubIndices = correspondenceDict.(keyName);
                 if strcmp(keyName, 'RPCA') && isfield(correspondenceDict, 'RPC2')
-                    segmentIndices = [segmentIndices, correspondenceDict.('RPC2')];
+                    segmentSubIndices = [segmentSubIndices; correspondenceDict.('RPC2')];
                 elseif strcmp(keyName, 'LPCA') && isfield(correspondenceDict, 'LPC2')
-                    segmentIndices = [segmentIndices, correspondenceDict.('LPC2')];
+                    segmentSubIndices = [segmentSubIndices; correspondenceDict.('LPC2')];
                 end
+
+                segmentSubIndices = segmentSubIndices';
             
-                for segIdx = segmentIndices
-                    segmentMask = data_struct.branchList(:, 4) == segIdx;
+                for segIdx2 = segmentSubIndices
+                    segmentMask = data_struct.branchList(:, 4) == segIdx2;
                     if nnz(segmentMask) < 5
                         continue;
                     end
@@ -67,9 +69,17 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
                     end
             
                     if signalStrength > bestSignalQuality
-                        bestSegment = segIdx;
+                        bestSegment = segIdx2;
                         bestSignalQuality = signalStrength;
                     end
+                end
+            elseif ismember(keyName, {'RMCA', 'LMCA'})
+                % Prioritize segments closer to centerline
+                meanX = mean(segmentPositions(:, 1));
+                centerlineDist = abs(meanX - (size(multiQVT, 1) / 2) - 3);
+                if centerlineDist < lowestDist
+                    bestSegment = segIdx;
+                    lowestDist = centerlineDist;
                 end
             end
         end
