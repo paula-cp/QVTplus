@@ -39,7 +39,7 @@ function loc = extractLocation(info, zValue, zColumn)
     loc = info(find(info(:, zColumn) == zValue, 1), :);
 end
 
-function loc = ensureMinZOffset(info, loc, minOffset)
+function loc = ensureMinZOffset(info, loc, minOffset, topOffset)
     % Ensure minimum Z offset is at least minOffset
     if loc(1, 5) < minOffset
         loc(1, 5) = minOffset;
@@ -49,7 +49,7 @@ function loc = ensureMinZOffset(info, loc, minOffset)
     maxZ = max(info(info(:, 4) == loc(4), 5));
 
     % Adjust if the difference is less than minOffset
-    if (maxZ - loc(1, 5)) < minOffset
-        loc(1, 5) = maxZ - minOffset;
+    if (maxZ - loc(1, 5)) < topOffset
+        loc(1, 5) = maxZ - topOffset;
     end
 end

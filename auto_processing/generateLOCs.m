@@ -38,9 +38,9 @@ function [correspondenceDict, LOCs] = generateLOCs(data_struct, correspondenceDi
         BA_LOC = find_LOCs('extractLocation', info_BA, max_single_z, 3);
 
         % Ensure minimum LOC Z offset of 3
-        LICA_LOC = find_LOCs('ensureMinZOffset', info_LICA, LICA_LOC, 3);
-        RICA_LOC = find_LOCs('ensureMinZOffset', info_RICA, RICA_LOC, 3);
-        BA_LOC = find_LOCs('ensureMinZOffset', info_BA, BA_LOC, 3);
+        LICA_LOC = find_LOCs('ensureMinZOffset', info_LICA, LICA_LOC, 4, 2); %si siguen apareciendo vessels cortados, subir el 4 a 5 o 6.
+        RICA_LOC = find_LOCs('ensureMinZOffset', info_RICA, RICA_LOC, 4, 2);
+        BA_LOC = find_LOCs('ensureMinZOffset', info_BA, BA_LOC, 4, 2);
 
         % Store the LOCs for ICA and BA
         LOCs.LICA = [LICA_LOC(1, 4), LICA_LOC(1, 5)];

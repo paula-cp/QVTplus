@@ -1,7 +1,18 @@
 function locEntry = processMainVessels(keyName, correspondenceDict, data_struct, multiQVT)
     % Initialize parameters
     if length(correspondenceDict.(keyName)) == 1
-        locEntry = [correspondenceDict.(keyName), 5];
+        bestSegment = correspondenceDict.(keyName);
+        segmentLength = sum(data_struct.branchList(:, 4) == bestSegment);
+    
+        if segmentLength == 5
+            LOC = 3;
+        elseif segmentLength == 6
+            LOC = 4;
+        else
+            LOC = 5;
+        end
+    
+        locEntry = [bestSegment, LOC];
         return;
     end
 
@@ -94,7 +105,17 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
 
     % Assign final segment or default to NaN
     if ~isempty(bestSegment)
-        locEntry = [bestSegment, 5];
+        segmentLength = sum(data_struct.branchList(:, 4) == bestSegment);
+    
+        if segmentLength == 5
+            LOC = 3;
+        elseif segmentLength == 6
+            LOC = 4;
+        else
+            LOC = 5;
+        end
+    
+        locEntry = [bestSegment, LOC];
     else
         locEntry = [NaN, NaN];
     end
@@ -105,6 +126,10 @@ function bestSegment = checkSecondarySegments(bestSegment, secondaryIndices, dat
 
     for segIdx = secondaryIndices'
         segmentPositions = data_struct.branchList(data_struct.branchList(:, 4) == segIdx, 1:3);
+
+        if size(segmentPositions, 1) < 5
+            continue;
+        end
 
         firstPoint = segmentPositions(1, :);
         lastPoint = segmentPositions(end, :);
