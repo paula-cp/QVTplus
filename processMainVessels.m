@@ -97,11 +97,11 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
     end
 
     % Check and update for RPC2/LPC2
-    if strcmp(keyName, 'RPCA') && ~isempty(bestSegment) && isfield(correspondenceDict, 'RPC2')
-        bestSegment = checkSecondarySegments(bestSegment, correspondenceDict.('RPC2'), data_struct);
-    elseif strcmp(keyName, 'LPCA') && ~isempty(bestSegment) && isfield(correspondenceDict, 'LPC2')
-        bestSegment = checkSecondarySegments(bestSegment, correspondenceDict.('LPC2'), data_struct);
-    end
+    % if strcmp(keyName, 'RPCA') && ~isempty(bestSegment) && isfield(correspondenceDict, 'RPC2')
+    %     bestSegment = checkSecondarySegments(bestSegment, correspondenceDict.('RPC2'), data_struct);
+    % elseif strcmp(keyName, 'LPCA') && ~isempty(bestSegment) && isfield(correspondenceDict, 'LPC2')
+    %     bestSegment = checkSecondarySegments(bestSegment, correspondenceDict.('LPC2'), data_struct);
+    % end
 
     % Assign final segment or default to NaN
     if ~isempty(bestSegment)

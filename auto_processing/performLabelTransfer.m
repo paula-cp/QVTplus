@@ -10,7 +10,7 @@ function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, outpu
     % decompressedFilePath = decompressAndRecenter(eICAB_path);
     
     % select eICAB orig_resampled file
-    fileList = dir(fullfile(eICAB_path, '**/*_orig_resampled.nii*'));
+    fileList = dir(fullfile(eICAB_path, '**/*_resampled.nii*'));
     if isempty(fileList)
         error('No eICAB orig_resampled file found in the specified path.');
     end
@@ -29,7 +29,7 @@ function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, outpu
     end
 
     % select eICAB orig_eICAB_CW file
-    fileList = dir(fullfile(eICAB_path, '**/*_orig_eICAB_CW.nii*'));
+    fileList = dir(fullfile(eICAB_path, '**/*_eICAB_CW.nii*'));
     if isempty(fileList)
         error('No eICAB orig_eICAB_CW file found in the specified path.');
     end
@@ -43,7 +43,7 @@ function [correspondenceDict, multiQVT] = performLabelTransfer(eICAB_path, outpu
         tofOrigEICABCW = fullfile(output_path, strrep(fileList(1).name, '.gz', ''));
     else
         % copy the file to the output path
-        cp(fullfile(fileList(1).folder, fileList(1).name), output_path);
+        copyfile(fullfile(fileList(1).folder, fileList(1).name), output_path);
         tofOrigEICABCW = fullfile(output_path, fileList(1).name);
     end
 
@@ -353,7 +353,11 @@ function [correspondenceDict, multiQVT] = generateCorrespondenceDict(folderPath,
     for i = 1:numel(segmentLabels)
         if isfield(correspondenceDict, segmentLabels{i})
             segments{i} = correspondenceDict.(segmentLabels{i});
-            maxLengths(i) = max(arrayfun(@(j) sum(data_struct.branchList(:, 4) == j), segments{i}));
+            if isempty(segments{i})
+                maxLengths(i) = 0;
+            else
+                maxLengths(i) = max(arrayfun(@(j) sum(data_struct.branchList(:, 4) == j), segments{i}));
+            end
         else
             segments{i} = [];
             maxLengths(i) = 0;
