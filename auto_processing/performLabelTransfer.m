@@ -315,6 +315,16 @@ function [correspondenceDict, multiQVT] = generateCorrespondenceDict(folderPath,
 
     % Remove duplicate entries within each key
     correspondenceDict = correspondence_funcs('removeDuplicateEntries', correspondenceDict);
+    
+    commIds = [];
+    for k = [4, 9, 10]                          % good_lab_4, _9, _10
+        srcKey = sprintf('good_lab_%d', k);
+        if isfield(correspondenceDict, srcKey)
+            commIds = [commIds; correspondenceDict.(srcKey)];
+        end
+    end
+    correspondenceDict.COMM = unique(commIds);  % original COMM list
+
 
     % Rename keys to their actual vessel names
     segmentMapping = {
@@ -325,16 +335,18 @@ function [correspondenceDict, multiQVT] = generateCorrespondenceDict(folderPath,
         'good_lab_5', 'LACA';
         'good_lab_6', 'RACA';
         'good_lab_3', 'BASI';
-        'good_lab_4', 'COMM';
-        'good_lab_9', 'COMM';
-        'good_lab_10', 'COMM'
+        'good_lab_4', 'ACOM';
+        'good_lab_9', 'LPCO';
+        'good_lab_10', 'RPCO'
     };
 
+    %create umbrella field COMM, encompassing vessels in all COMM arteries.
+    %(necessary for QVT+ processing)
     for i = 1:size(segmentMapping, 1)
         goodLab = segmentMapping{i, 1};
         targetKey = segmentMapping{i, 2};
         if isfield(correspondenceDict, goodLab)
-            if strcmp(targetKey, 'COMM')
+            if strcmp(targetKey, 'ACOM') || strcmp(targetKey, 'LPCO') || strcmp(targetKey, 'RPCO')
                 if ~isfield(correspondenceDict, 'COMM')
                     correspondenceDict.COMM = [];
                 end
@@ -382,6 +394,16 @@ function [correspondenceDict, multiQVT] = generateCorrespondenceDict(folderPath,
         correspondenceDict.COMM = unique(correspondenceDict.COMM);
     else
         correspondenceDict.COMM = [];
+    end
+    
+    if isfield(correspondenceDict, 'good_lab_4')
+        correspondenceDict.ACOM = correspondenceDict.good_lab_4;
+    end
+    if isfield(correspondenceDict, 'good_lab_9')
+        correspondenceDict.LPCO = correspondenceDict.good_lab_9;
+    end
+    if isfield(correspondenceDict, 'good_lab_10')
+        correspondenceDict.RPCO = correspondenceDict.good_lab_10;
     end
 
     % Remove unused good_lab keys

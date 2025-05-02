@@ -83,4 +83,38 @@ function [correspondenceDict, LOCs] = generateLOCs(data_struct, correspondenceDi
             correspondenceDict = rmfield(correspondenceDict, 'LPC2');
         end
     end
+
+    %% Step 4: Process communicating arteries
+    commNames = {'ACOM', 'LPCO', 'RPCO'};
+    for i = 1:numel(commNames)
+        keyName = commNames{i};
+
+        if ~isfield(correspondenceDict, keyName)
+            continue;
+        end
+
+        segmentIDs = correspondenceDict.(keyName);
+
+        % Count how many points each segment has
+        lengths = arrayfun(@(j) sum(data_struct.branchList(:, 4) == j), segmentIDs);
+
+        % Filter to segments longer than 5 points
+        validIdx = find(lengths > 5);
+
+        if isempty(validIdx)
+            warning('%s: No valid segment with >5 points found. Skipping.', keyName);
+            continue;
+        end
+
+        % Choose the shortest valid one
+        [~, minIdx] = min(lengths(validIdx));
+        selectedBranch = segmentIDs(validIdx(minIdx));
+
+        % Get info for the selected branch
+        length = sum(data_struct.branchList(:,4) == selectedBranch);
+
+        LOCs.(keyName) = [selectedBranch, round(length / 2)];
+    end
+
+
 end
