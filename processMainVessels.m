@@ -22,6 +22,7 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
     lowestZ = inf;
     largestY = -inf;
     lowestDist = inf;
+    lowestSTD = inf;
 
     % Loop through each segment index and process it
     for segIdx = segmentIndices'
@@ -29,11 +30,11 @@ function locEntry = processMainVessels(keyName, correspondenceDict, data_struct,
 
         if size(segmentPositions, 1) > 4
             if ismember(keyName, {'RACA', 'LACA'})
-                % Find segment with the highest Z value
-                maxZ = mean(segmentPositions(:, 3));
-                if maxZ > highestZ
+                % find std along positions in the Z axis
+                minstdZ = std(segmentPositions(:,3));
+                if minstdZ < lowestSTD
                     bestSegment = segIdx;
-                    highestZ = maxZ;
+                    lowestSTD = minstdZ;
                 end
 
             elseif ismember(keyName, {'RPCA', 'LPCA'})
